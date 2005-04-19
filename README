@@ -1,0 +1,47 @@
+This is a client and server library for XML_RPC in Haskell.
+
+Files:
+
+src/  contains the source code for the library
+test/ contains some sample program, see test/README
+doc/  is where the API documentation goes if you build it
+
+
+Requirements:
+
+- A recent version of GHC (only tested with GHC 6.0.1 and 6.2) or 
+  Hugs (only tested with Hugs November 2003)
+- HaXML (tested with HaXML 1.09 and HaXml 1.10, HaXml 1.10 is needed
+  for Hugs support)
+- Haddock is needed to build the API documentation.
+- The HTTP package.
+
+
+Compiling:
+
+- Edit config.mk to suit your environment.
+
+- compile:
+
+$ make
+
+
+Installing:
+
+The XmlRpc package may be installed in your GHC and Hugs directories
+by running (NOTE: the hugs installation is not well tested):
+
+$ make install
+
+
+Documentation:
+
+You can build Haddock documentation from the source code:
+
+$ make doc
+
+
+Debugging:
+
+- To log all HTTP traffic to a file, edit src/HTTP.hs and set
+  debug to True.

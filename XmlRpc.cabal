@@ -1,0 +1,22 @@
+Name: XmlRpc
+Version: 2004.6.17
+Copyright: Bjorn Bringert, 2004
+Build-depends: haskell98, mtl, HaXml, HTTP
+License: BSD4
+Author: Bjorn Bringert <bjorn@bringert.net>
+Maintainer: Bjorn Bringert <bjorn@bringert.net>
+Homepage: http://www.dtek.chalmers.se/~d00bring/haskell-xml-rpc/
+Description:
+        Haskell XML-RPC (if you can think of a better name, let me know) is a library for writing XML-RPC client and server applications in Haskell.
+Category: Xml
+Exposed-Modules:
+        Network.XmlRpc.Client,
+        Network.XmlRpc.Server,
+        Network.XmlRpc.Internals,
+        Network.XmlRpc.Introspect,
+        Network.XmlRpc.THDeriveXmlRpcType
+Other-Modules:
+        Network.XmlRpc.DTD_XMLRPC
+Extensions: OverlappingInstances, TypeSynonymInstances
+Hs-Source-Dir: src
+GHC-options: -O2
