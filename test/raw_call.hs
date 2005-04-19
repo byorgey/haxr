@@ -8,7 +8,7 @@ import Data.Char
 import Network.URI
 
 import Network.XmlRpc.Internals
-import Network.XmlRpc.HTTP
+import Network.HTTP
 
 parseArgs :: IO String
 parseArgs = do

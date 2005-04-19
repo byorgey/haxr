@@ -11,6 +11,8 @@
 -- Uses Template Haskell to automagically derive instances of 'XmlRpcType'
 --
 ------------------------------------------------------------------------------
+
+{-# LANGUAGE TemplateHaskell #-}
 module Network.XmlRpc.THDeriveXmlRpcType (asXmlRpcStruct) where
 
 import Control.Monad (replicateM, liftM)
