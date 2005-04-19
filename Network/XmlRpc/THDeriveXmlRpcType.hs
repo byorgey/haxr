@@ -23,8 +23,10 @@ import Network.XmlRpc.Internals hiding (Type)
 
 -- | Creates an 'XmlRpcType' instance which handles a Haskell record
 --   as an XmlRpc struct. Example:
--- > data Person = Person { name :: String, age :: Int }
--- > $(asXmlRpcStruct (reifyDecl Person))
+-- @
+-- data Person = Person { name :: String, age :: Int }
+-- $(asXmlRpcStruct (reifyDecl Person))
+-- @
 asXmlRpcStruct :: DecQ -> Q [Dec]
 asXmlRpcStruct d = d >>= mkInstance
 
