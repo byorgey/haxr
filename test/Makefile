@@ -8,7 +8,7 @@ TEST_PROGS = latest-xmlrpc make-stubs parse_response \
 
 .SUFFIXES: .hs .hi .o
 
-.PHONY: clean
+.PHONY: all clean
 
 default all: $(TEST_PROGS)
 

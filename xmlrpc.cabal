@@ -1,16 +1,15 @@
 Name: XmlRpc
-Version: 2005.4.19
+Version: 2005.5.5
 Copyright: Bjorn Bringert, 2003-2005
-Build-depends: haskell98, base, mtl, HaXml, HTTP
+Build-depends: haskell98, base, mtl, HaXml, HTTP, Crypto
 License: BSD4
 License-file: LICENSE
 Author: Bjorn Bringert <bjorn@bringert.net>
 Maintainer: Bjorn Bringert <bjorn@bringert.net>
-Homepage: http://www.dtek.chalmers.se/~d00bring/haskell-xml-rpc/
+Homepage: http://www.haskell.org/xmlrpc/
 Description:
-        Haskell XML-RPC is a library for writing XML-RPC 
+        HaXR is a library for writing XML-RPC 
         client and server applications in Haskell.
-Category: Xml
 Exposed-Modules:
         Network.XmlRpc.Client,
         Network.XmlRpc.Server,

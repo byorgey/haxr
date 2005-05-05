@@ -45,7 +45,8 @@ import System.IO.Unsafe (unsafePerformIO)
 
 import Text.XML.HaXml.Xml2Haskell
 
-import Codec.Base64
+import Codec.Binary.Base64 as Base64
+import Codec.Utils (Octet)
 
 import Network.XmlRpc.DTD_XMLRPC
 
@@ -347,8 +348,11 @@ showDateTime t = formatCalendarTime defaultTimeLocale xmlRpcDateFormat t
     where xmlRpcDateFormat = "%Y%m%dT%H:%M:%S"
 
 showBase64 :: String -> String
-showBase64 s = encode s
-
+showBase64 = encode . stringToOctets
+    where
+        -- FIXME: this probably only works right for latin-1 strings
+	stringToOctets :: String -> [Octet]
+	stringToOctets = map (fromIntegral . fromEnum)
 
 
 toXRMethodCall :: MethodCall -> XRMethodCall
@@ -474,7 +478,11 @@ mkUTCTime y m d h mi s =
 
 -- FIXME: what if data contains non-base64 characters?
 readBase64 :: Monad m => String -> Err m String
-readBase64 s = return (decode s)
+readBase64 = return . octetsToString . decode
+    where
+        -- FIXME: this probably only works right for latin-1 strings
+	octetsToString :: [Octet] -> String
+	octetsToString = map (toEnum . fromIntegral)
 
 
 fromXRParams :: Monad m => XRParams -> Err m [Value]
