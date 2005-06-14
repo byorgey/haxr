@@ -18,5 +18,5 @@ Exposed-Modules:
         Network.XmlRpc.THDeriveXmlRpcType
 Other-Modules:
         Network.XmlRpc.DTD_XMLRPC
-Extensions: OverlappingInstances, TypeSynonymInstances
+Extensions: OverlappingInstances, TypeSynonymInstances, TemplateHaskell
 GHC-options: -O2
