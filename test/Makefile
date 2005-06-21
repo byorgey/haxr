@@ -1,5 +1,5 @@
 GHC = ghc
-GHCFLAGS = -O2 -package XmlRpc -fallow-overlapping-instances
+GHCFLAGS = -O2 -package XmlRpc -fallow-overlapping-instances -fth
 
 TEST_PROGS = latest-xmlrpc make-stubs parse_response \
              person_client person_server raw_call \

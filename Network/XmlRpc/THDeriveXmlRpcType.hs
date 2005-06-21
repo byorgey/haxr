@@ -25,10 +25,16 @@ import Network.XmlRpc.Internals hiding (Type)
 --   as an XmlRpc struct. Example:
 -- @
 -- data Person = Person { name :: String, age :: Int }
--- $(asXmlRpcStruct (reifyDecl Person))
+-- $(asXmlRpcStruct \'\'Person)
 -- @
-asXmlRpcStruct :: DecQ -> Q [Dec]
-asXmlRpcStruct d = d >>= mkInstance
+asXmlRpcStruct :: Name -> Q [Dec]
+asXmlRpcStruct name = 
+    do
+    info <- reify name
+    dec <- case info of
+		     TyConI d -> return d
+		     _ -> fail $ show name ++ " is not a type constructor"
+    mkInstance dec
 
 mkInstance :: Dec -> Q [Dec]
 mkInstance  (DataD _ n _ [RecC c fs] _) = 
