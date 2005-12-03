@@ -48,7 +48,7 @@ import Text.XML.HaXml.Xml2Haskell
 import Codec.Binary.Base64 as Base64
 import Codec.Utils (Octet)
 
-import Network.XmlRpc.DTD_XMLRPC
+import qualified Network.XmlRpc.DTD_XMLRPC as XR
 
 --
 -- General utilities
@@ -316,17 +316,17 @@ getFieldMaybe x xs = case lookup x xs of
 -- Converting to XR types
 --
 
-toXRValue :: Value -> XRValue
-toXRValue (ValueInt x) = XRValueXRInt (XRInt (showInt x))
-toXRValue (ValueBool b) = XRValueXRBoolean (XRBoolean (showBool b))
-toXRValue (ValueString s) = XRValueXRString (XRString (showString s))
-toXRValue (ValueDouble d) = XRValueXRDouble (XRDouble (showDouble d))
+toXRValue :: Value -> XR.Value
+toXRValue (ValueInt x) = XR.Value [XR.Value_Int (XR.Int (showInt x))]
+toXRValue (ValueBool b) = XR.Value [XR.Value_Boolean (XR.Boolean (showBool b))]
+toXRValue (ValueString s) = XR.Value [XR.Value_String (XR.String (showString s))]
+toXRValue (ValueDouble d) = XR.Value [XR.Value_Double (XR.Double (showDouble d))]
 toXRValue (ValueDateTime t) = 
-    XRValueXRDateTime_iso8601 (XRDateTime_iso8601 (showDateTime t))
-toXRValue (ValueBase64 s) = XRValueXRBase64 (XRBase64 (showBase64 s))
-toXRValue (ValueStruct xs) = XRValueXRStruct (XRStruct (map toXRMember xs))
+   XR.Value [ XR.Value_DateTime_iso8601 (XR.DateTime_iso8601 (showDateTime t))]
+toXRValue (ValueBase64 s) = XR.Value [XR.Value_Base64 (XR.Base64 (showBase64 s))]
+toXRValue (ValueStruct xs) = XR.Value [XR.Value_Struct (XR.Struct (map toXRMember xs))]
 toXRValue (ValueArray xs) = 
-    XRValueXRArray (XRArray (XRData (map toXRValue xs)))
+    XR.Value [XR.Value_Array (XR.Array (XR.Data (map toXRValue xs)))]
 
 showInt :: Int -> String
 showInt = show
@@ -355,41 +355,45 @@ showBase64 = encode . stringToOctets
 	stringToOctets = map (fromIntegral . fromEnum)
 
 
-toXRMethodCall :: MethodCall -> XRMethodCall
+toXRMethodCall :: MethodCall -> XR.MethodCall
 toXRMethodCall (MethodCall name vs) = 
-    XRMethodCall (XRMethodName name) (Just (toXRParams vs))
+    XR.MethodCall (XR.MethodName name) (Just (toXRParams vs))
 
-toXRMethodResponse :: MethodResponse -> XRMethodResponse
-toXRMethodResponse (Return val) = XRMethodResponseXRParams (toXRParams [val])
+toXRMethodResponse :: MethodResponse -> XR.MethodResponse
+toXRMethodResponse (Return val) = XR.MethodResponseParams (toXRParams [val])
 toXRMethodResponse (Fault code str) = 
-    XRMethodResponseXRFault (XRFault (toXRValue (faultStruct code str)))
+    XR.MethodResponseFault (XR.Fault (toXRValue (faultStruct code str)))
 
-toXRParams :: [Value] -> XRParams 
-toXRParams vs = XRParams (map (XRParam . toXRValue) vs)
+toXRParams :: [Value] -> XR.Params 
+toXRParams vs = XR.Params (map (XR.Param . toXRValue) vs)
 
-toXRMember :: (String, Value) -> XRMember
-toXRMember (n, v) = XRMember (XRName n) (toXRValue v)
+toXRMember :: (String, Value) -> XR.Member
+toXRMember (n, v) = XR.Member (XR.Name n) (toXRValue v)
 
 --
 -- Converting from XR types
 --
 
-fromXRValue :: Monad m => XRValue -> Err m Value
-fromXRValue (XRValueXRI4 (XRI4 x)) = liftM ValueInt (readInt x)
-fromXRValue (XRValueXRInt (XRInt x)) = liftM ValueInt (readInt x)
-fromXRValue (XRValueXRBoolean (XRBoolean x)) = liftM ValueBool (readBool x)
-fromXRValue (XRValueXRDouble (XRDouble x)) = liftM ValueDouble (readDouble x)
-fromXRValue (XRValueXRString (XRString x)) = liftM ValueString (readString x)
-fromXRValue (XRValueXRDateTime_iso8601 (XRDateTime_iso8601 x)) =
+fromXRValue :: Monad m => XR.Value -> Err m Value
+fromXRValue (XR.Value [v]) = f v
+  where
+  f (XR.Value_Str x) = liftM ValueString (readString x)
+  f (XR.Value_I4 (XR.I4 x)) = liftM ValueInt (readInt x)
+  f (XR.Value_Int (XR.Int x)) = liftM ValueInt (readInt x)
+  f (XR.Value_Boolean (XR.Boolean x)) = liftM ValueBool (readBool x)
+  f (XR.Value_Double (XR.Double x)) = liftM ValueDouble (readDouble x)
+  f (XR.Value_String (XR.String x)) = liftM ValueString (readString x)
+  f (XR.Value_DateTime_iso8601 (XR.DateTime_iso8601 x)) =
     liftM ValueDateTime (readDateTime x)
-fromXRValue (XRValueXRBase64 (XRBase64 x)) = liftM ValueBase64 (readBase64 x)
-fromXRValue (XRValueXRStruct (XRStruct ms)) = 
+  f (XR.Value_Base64 (XR.Base64 x)) = liftM ValueBase64 (readBase64 x)
+  f (XR.Value_Struct (XR.Struct ms)) = 
     liftM ValueStruct (mapM fromXRMember ms) 
-fromXRValue (XRValueXRArray (XRArray (XRData xs))) = 
+  f (XR.Value_Array (XR.Array (XR.Data xs))) = 
     liftM ValueArray (mapM fromXRValue xs) 
+fromXRValue _ = fail $ "value element should have exactly one child"
 
-fromXRMember :: Monad m => XRMember -> Err m (String,Value)
-fromXRMember (XRMember (XRName n) xv) = liftM (\v -> (n,v)) (fromXRValue xv)
+fromXRMember :: Monad m => XR.Member -> Err m (String,Value)
+fromXRMember (XR.Member (XR.Name n) xv) = liftM (\v -> (n,v)) (fromXRValue xv)
 
 -- | From the XML-RPC specification:
 --
@@ -485,17 +489,17 @@ readBase64 = return . octetsToString . decode
 	octetsToString = map (toEnum . fromIntegral)
 
 
-fromXRParams :: Monad m => XRParams -> Err m [Value]
-fromXRParams (XRParams xps) = mapM (\(XRParam v) -> fromXRValue v) xps
+fromXRParams :: Monad m => XR.Params -> Err m [Value]
+fromXRParams (XR.Params xps) = mapM (\(XR.Param v) -> fromXRValue v) xps
 
-fromXRMethodCall :: Monad m => XRMethodCall -> Err m MethodCall
-fromXRMethodCall (XRMethodCall (XRMethodName name) params) = 
-    liftM (MethodCall name) (fromXRParams (fromMaybe (XRParams []) params))
+fromXRMethodCall :: Monad m => XR.MethodCall -> Err m MethodCall
+fromXRMethodCall (XR.MethodCall (XR.MethodName name) params) = 
+    liftM (MethodCall name) (fromXRParams (fromMaybe (XR.Params []) params))
 
-fromXRMethodResponse :: Monad m => XRMethodResponse -> Err m MethodResponse
-fromXRMethodResponse (XRMethodResponseXRParams xps) = 
+fromXRMethodResponse :: Monad m => XR.MethodResponse -> Err m MethodResponse
+fromXRMethodResponse (XR.MethodResponseParams xps) = 
     liftM Return (fromXRParams xps >>= onlyOneResult)
-fromXRMethodResponse (XRMethodResponseXRFault (XRFault v)) =
+fromXRMethodResponse (XR.MethodResponseFault (XR.Fault v)) =
     do
     struct <- fromXRValue v
     vcode <- structGetValue "faultCode" struct

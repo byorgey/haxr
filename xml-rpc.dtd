@@ -41,6 +41,13 @@
         Add version 2 extension:  nil element.
   -->
 
+<!--
+     2005-12-01 Bjorn Bringert <bjorn@bringert.net>
+        Allow PCDATA in value, in accordance with the XML-RPC spec.
+	Had to mess it up by allowing any number of elements in
+	a value element. I'll deal with this in post processing.
+  -->
+
 
 <!-- ******************* Version 2 extensions **************** -->
 
@@ -115,10 +122,10 @@
 <!-- ******************* Parameter handling ******************* -->
 
 <!ELEMENT value
-          ( i4 | int | boolean | string | dateTime.iso8601
+          ( #PCDATA | i4 | int | boolean | string | dateTime.iso8601
             | double | base64 | struct | array
             %v2values;
-          )
+          )*
   >
 
 <!ELEMENT param
