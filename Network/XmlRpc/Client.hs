@@ -32,6 +32,7 @@ module Network.XmlRpc.Client
     (
      remote,
      call,
+     Remote
     ) where
 
 import Network.XmlRpc.Internals
