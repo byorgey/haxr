@@ -375,7 +375,6 @@ toXRMember (n, v) = XR.Member (XR.Name n) (toXRValue v)
 --
 
 fromXRValue :: Monad m => XR.Value -> Err m Value
-fromXRValue (XR.Value []) = fail "empty <value>"
 fromXRValue (XR.Value vs)
   =  case (filter notstr vs) of
        []   -> liftM  (ValueString . concat) (mapM (readString . unstr) vs)
