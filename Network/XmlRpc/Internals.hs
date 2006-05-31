@@ -377,9 +377,8 @@ toXRMember (n, v) = XR.Member (XR.Name n) (toXRValue v)
 fromXRValue :: Monad m => XR.Value -> Err m Value
 fromXRValue (XR.Value vs)
   =  case (filter notstr vs) of
-       []   -> liftM  (ValueString . concat) (mapM (readString . unstr) vs)
-       [v]  -> f v
-       _    -> fail "multiple children in <value>"
+       []     -> liftM  (ValueString . concat) (mapM (readString . unstr) vs)
+       (v:_)  -> f v
   where
   notstr (XR.Value_Str _)  = False
   notstr _                 = True
