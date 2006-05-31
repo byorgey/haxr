@@ -375,9 +375,18 @@ toXRMember (n, v) = XR.Member (XR.Name n) (toXRValue v)
 --
 
 fromXRValue :: Monad m => XR.Value -> Err m Value
-fromXRValue (XR.Value [v]) = f v
+fromXRValue (XR.Value []) = fail "empty <value>"
+fromXRValue (XR.Value vs)
+  =  case (filter notstr vs) of
+       []   -> liftM  (ValueString . concat) (mapM (readString . unstr) vs)
+       [v]  -> f v
+       _    -> fail "multiple children in <value>"
   where
-  f (XR.Value_Str x) = liftM ValueString (readString x)
+  notstr (XR.Value_Str _)  = False
+  notstr _                 = True
+
+  unstr (XR.Value_Str x)  = x
+
   f (XR.Value_I4 (XR.I4 x)) = liftM ValueInt (readInt x)
   f (XR.Value_Int (XR.Int x)) = liftM ValueInt (readInt x)
   f (XR.Value_Boolean (XR.Boolean x)) = liftM ValueBool (readBool x)
@@ -390,7 +399,7 @@ fromXRValue (XR.Value [v]) = f v
     liftM ValueStruct (mapM fromXRMember ms) 
   f (XR.Value_Array (XR.Array (XR.Data xs))) = 
     liftM ValueArray (mapM fromXRValue xs) 
-fromXRValue _ = fail $ "value element should have exactly one child"
+
 
 fromXRMember :: Monad m => XR.Member -> Err m (String,Value)
 fromXRMember (XR.Member (XR.Name n) xv) = liftM (\v -> (n,v)) (fromXRValue xv)
