@@ -239,7 +239,6 @@ instance XmlRpcType Int where
 	      f _ = Nothing
     getType _ = TInt
 
--- FIXME: true / false or 1 / 0 ?
 instance XmlRpcType Bool where
     toValue = ValueBool
     fromValue = simpleFromValue f
@@ -331,7 +330,7 @@ showInt :: Int -> String
 showInt = show
 
 showBool :: Bool -> String
-showBool b = if b then "true" else "false"
+showBool b = if b then "1" else "0"
 
 -- escapes & and <
 showString :: String -> String
