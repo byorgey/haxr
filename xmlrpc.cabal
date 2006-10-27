@@ -2,7 +2,7 @@ Name: XmlRpc
 Version: 2006.6.26
 Copyright: Bjorn Bringert, 2003-2005
 Build-depends: haskell98, base, mtl, network, 
-               HaXml, HTTP, Crypto, template-haskell
+               HaXml, HTTP, template-haskell
 License: BSD4
 License-file: LICENSE
 Author: Bjorn Bringert <bjorn@bringert.net>
@@ -18,6 +18,7 @@ Exposed-Modules:
         Network.XmlRpc.Introspect,
         Network.XmlRpc.THDeriveXmlRpcType
 Other-Modules:
+        Network.XmlRpc.Base64,
         Network.XmlRpc.DTD_XMLRPC
 Extensions: OverlappingInstances, TypeSynonymInstances, TemplateHaskell
 GHC-options: -O2

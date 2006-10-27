@@ -35,18 +35,18 @@ module Network.XmlRpc.Client
      Remote
     ) where
 
+import Network.XmlRpc.Base64 as Base64
 import Network.XmlRpc.Internals
 
 import Control.Exception (handleJust, userErrors)
 import Data.Char
 import Data.Maybe
+import Data.Word (Word8)
 import Network.URI
 import Network.Socket (withSocketsDo)
 
 import Network.HTTP
 
-import Codec.Binary.Base64 as Base64
-import Codec.Utils (Octet)
 
 -- | Gets the return value from a method response.
 --   Throws an exception if the response was a fault.
@@ -166,7 +166,7 @@ authHdr u p = Just (Header HdrAuthorization ("Basic " ++ base64encode user_pass)
 	where user_pass = fromMaybe "" u ++ ":" ++ fromMaybe "" p
 	      base64encode = encode . stringToOctets
 	      -- FIXME: this probably only works right for latin-1 strings
-	      stringToOctets :: String -> [Octet]
+	      stringToOctets :: String -> [Word8]
 	      stringToOctets = map (fromIntegral . fromEnum)
 
 --

@@ -34,6 +34,7 @@ import Prelude hiding (showString, catch)
 import Control.Monad
 import Data.Maybe
 import Data.List
+import Data.Word (Word8)
 import Numeric (showFFloat)
 import Data.Char
 import System.Time
@@ -45,9 +46,7 @@ import System.IO.Unsafe (unsafePerformIO)
 
 import Text.XML.HaXml.Xml2Haskell
 
-import Codec.Binary.Base64 as Base64
-import Codec.Utils (Octet)
-
+import Network.XmlRpc.Base64 as Base64
 import qualified Network.XmlRpc.DTD_XMLRPC as XR
 
 --
@@ -351,7 +350,7 @@ showBase64 :: String -> String
 showBase64 = encode . stringToOctets
     where
         -- FIXME: this probably only works right for latin-1 strings
-	stringToOctets :: String -> [Octet]
+	stringToOctets :: String -> [Word8]
 	stringToOctets = map (fromIntegral . fromEnum)
 
 
@@ -492,7 +491,7 @@ readBase64 :: Monad m => String -> Err m String
 readBase64 = return . octetsToString . decode
     where
         -- FIXME: this probably only works right for latin-1 strings
-	octetsToString :: [Octet] -> String
+	octetsToString :: [Word8] -> String
 	octetsToString = map (toEnum . fromIntegral)
 
 
