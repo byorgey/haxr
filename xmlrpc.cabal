@@ -1,5 +1,5 @@
 Name: XmlRpc
-Version: 2006.6.26
+Version: 2006.10.28
 Copyright: Bjorn Bringert, 2003-2005
 Build-depends: haskell98, base, mtl, network, 
                HaXml, HTTP, template-haskell
