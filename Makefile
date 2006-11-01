@@ -1,6 +1,6 @@
 HADDOCK = haddock
 
-TODAY = $(shell date +%Y%m%d)
+TODAY = $(shell perl -ne 'if (s/^Version:\s*//) {s/\.//g; print; };' xmlrpc.cabal)
 DIST_NAME = haxr-$(TODAY)
 
 HADDOCK_FILES = Network/XmlRpc/Internals.hs Network/XmlRpc/Server.hs \
