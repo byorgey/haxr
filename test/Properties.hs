@@ -7,7 +7,7 @@ import Data.List
 import Data.Maybe
 import System.Time
 
-import Debug.QuickCheck
+import Test.QuickCheck
 
 {-
 xmlRpcId1 :: (XmlRpcType a, XmlRpcType b, Eq b) => (a -> b) -> a -> Bool
