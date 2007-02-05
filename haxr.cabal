@@ -7,6 +7,7 @@ License-file: LICENSE
 Author: Bjorn Bringert <bjorn@bringert.net>
 Maintainer: Bjorn Bringert <bjorn@bringert.net>
 Homepage: http://www.haskell.org/haxr/
+Synopsis: XML-RPC client and server library.
 Description:
         HaXR is a library for writing XML-RPC 
         client and server applications in Haskell.
