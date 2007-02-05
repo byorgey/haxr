@@ -30,7 +30,7 @@ module Network.XmlRpc.Server
 
 import Network.XmlRpc.Internals
 
-import Maybe
+import Data.Maybe
 import Control.Monad.Error
 import Control.Exception
 
