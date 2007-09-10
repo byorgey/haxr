@@ -3,7 +3,7 @@ module Network.XmlRpc.DTD_XMLRPC where
 import Text.XML.HaXml.Xml2Haskell
 import Text.XML.HaXml.OneOfN
 import Data.Char (isSpace)
-import Prelude (all, concatMap, (++), maybe)
+import Prelude hiding (String, Int, Double)
 import qualified Prelude
 
 
