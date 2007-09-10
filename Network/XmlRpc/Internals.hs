@@ -210,17 +210,21 @@ class XmlRpcType a where
     fromValue :: Monad m => Value -> Err m a
     getType :: a -> Type
 
-typeError :: Monad m => Type -> Value -> Err m a
-typeError t v = fail ("Wanted: "  
-		     -- ++ show (getType t)
-		      ++ "', got: '" 
-		      ++ showXml (toXRValue v) ++ "'")
+typeError :: (XmlRpcType a, Monad m) => Value -> Err m a
+typeError v = withType $ \t ->
+       fail ("Wanted: "  
+	     ++ show (getType t)
+	     ++ "', got: '" 
+	     ++ showXml (toXRValue v) ++ "'") `asTypeOf` return t
 
+-- a type hack for use in 'typeError'
+withType :: (a -> Err m a) -> Err m a
+withType f = f undefined
 
 simpleFromValue :: (Monad m, XmlRpcType a) => (Value -> Maybe a) 
 		-> Value -> Err m a
 simpleFromValue f v = 
-    maybe (typeError (getType (fromJust (f v))) v) return (f v)
+    maybe (typeError v) return (f v)
 
 
 -- | Exists to allow explicit type conversions.
@@ -272,14 +276,8 @@ instance XmlRpcType CalendarTime where
 instance XmlRpcType a => XmlRpcType [a] where
     toValue = ValueArray . map toValue 
     fromValue v = case v of
-			 ValueArray _ -> r
-			 -- FIXME: I am using TArray here because for
-			 -- some reason Hugs Nov 2003 requires a XmlRpcRpc [a]
-			 -- constraint on fromValue (which is not 
-			 -- legal haskell) to do (getType t) here.
-			 _ -> r >>= \t -> typeError TArray v
-	where ValueArray xs = v
-	      r = mapM fromValue xs
+			 ValueArray xs -> mapM fromValue xs
+			 _ -> typeError v
     getType _ = TArray
 
 -- FIXME: struct elements may have different types
@@ -287,10 +285,8 @@ instance XmlRpcType a => XmlRpcType [(String,a)] where
     toValue xs = ValueStruct [(n, toValue v) | (n,v) <- xs]
 
     fromValue v = case v of
-		  ValueStruct _ -> r
-		  _ -> r >>= \t -> typeError (getType t) v
-	where ValueStruct xs = v
-	      r = mapM (\ (n,v) -> liftM ((,) n) (fromValue v)) xs
+		  ValueStruct xs -> mapM (\ (n,v) -> liftM ((,) n) (fromValue v)) xs
+		  _ -> typeError v
     getType _ = TStruct
 
 -- | Get a field value from a (possibly heterogeneous) struct.
