@@ -74,15 +74,22 @@ instance XmlRpcType a => XmlRpcFun (IO a) where
 			      v <- handleIO x
 			      return (Return (toValue v))
     toFun _ _ = fail "Too many arguments"
-    sig (_::IO a) = ([], getType (undefined::a))
+    sig x = ([], getType (mType x))
 
 instance (XmlRpcType a, XmlRpcFun b) => XmlRpcFun (a -> b) where
     toFun f (MethodCall n (x:xs)) = do
 				  v <- fromValue x
 				  toFun (f v) (MethodCall n xs)
     toFun _ _ = fail "Too few arguments"
-    sig (f::a->b) = let (as, r) = sig (undefined::b) 
-			in (getType (undefined::a) : as, r)
+    sig f = let (a,b) = funType f
+                (as, r) = sig b
+             in (getType a : as, r)
+
+mType :: m a -> a
+mType _ = undefined
+
+funType :: (a -> b) -> (a, b)
+funType _ = (undefined, undefined)
 
 -- FIXME: always returns error code 0
 errorToResponse :: ServerResult -> IO MethodResponse
