@@ -3,7 +3,7 @@ Version: 3000.0.1
 Cabal-version: >=1.2
 Build-type: Simple
 Copyright: Bjorn Bringert, 2003-2006
-License: BSD4
+License: OtherLicense
 License-file: LICENSE
 Author: Bjorn Bringert <bjorn@bringert.net>
 Maintainer: Bjorn Bringert <bjorn@bringert.net>
