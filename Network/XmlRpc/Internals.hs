@@ -34,6 +34,8 @@ import Prelude hiding (showString, catch)
 import Control.Monad
 import Data.Maybe
 import Data.List
+import Data.Time.LocalTime
+import Data.Time.Format
 import Data.Word (Word8)
 import Numeric (showFFloat)
 import Data.Char
@@ -73,6 +75,9 @@ maybeToM :: Monad m =>
 	     -> m a -- ^ The resulting value in the monad.
 maybeToM err Nothing = fail err
 maybeToM _ (Just x) = return x
+
+-- | The format for \"dateTime.iso8601\"
+xmlRpcDateFormat = "%Y%m%dT%H:%M:%S"
 
 --
 -- Error monad stuff
@@ -136,7 +141,7 @@ data Value =
     | ValueBool Bool -- ^ bool
     | ValueString String -- ^ string
     | ValueDouble Double -- ^ double
-    | ValueDateTime CalendarTime -- ^ dateTime.iso8601
+    | ValueDateTime LocalTime -- ^ dateTime.iso8601
     | ValueBase64 String -- ^ base 64
     | ValueStruct [(String,Value)] -- ^ struct
     | ValueArray [Value]  -- ^ array
@@ -265,7 +270,7 @@ instance XmlRpcType Double where
 	      f _ = Nothing
     getType _ = TDouble
 
-instance XmlRpcType CalendarTime where
+instance XmlRpcType LocalTime where
     toValue = ValueDateTime
     fromValue = simpleFromValue f
 	where f (ValueDateTime x) = Just x
@@ -337,9 +342,8 @@ showDouble :: Double -> String
 showDouble d = showFFloat Nothing d ""
 
 -- | Shows a date and time on the format: YYYYMMDDTHH:mm:SS
-showDateTime :: CalendarTime -> String
-showDateTime t = formatCalendarTime defaultTimeLocale xmlRpcDateFormat t
-    where xmlRpcDateFormat = "%Y%m%dT%H:%M:%S"
+showDateTime :: LocalTime -> String
+showDateTime t = formatTime defaultTimeLocale xmlRpcDateFormat t
 
 showBase64 :: String -> String
 showBase64 = Base64.encode . stringToOctets
@@ -449,20 +453,12 @@ readDouble s = errorRead reads "Error parsing double" s
 --   content of this element should not be assumed to comply with the
 --   variants of the ISO8601 standard. Only assume YYYYMMDDTHH:mm:SS\"
 -- FIXME: make more robust
-readDateTime :: Monad m => String -> Err m CalendarTime
-readDateTime (x:xs) | isSpace x = readDateTime xs
-readDateTime (y1:y2:y3:y4:m1:m2:d1:d2:'T':h1:h2:':':mi1:mi2:':':s1:s2:xs) 
-	     | all isSpace xs =
-    do
-    y <- errorRead reads "Error parsing year" [y1,y2,y3,y4] 
-    m' <- errorRead reads "Error parsing month" [m1,m2] 
-    m <-  errorToEnum ("Bad month number: " ++ show m') (m'-1)
-    d <- errorRead reads "Error parsing day" [d1,d2]
-    h <- errorRead reads "Error parsing hour" [h1,h2]
-    mi <- errorRead reads "Error parsing minute" [mi1,mi2]
-    s <- errorRead reads "Error parsing second" [s1,s2]
-    return (mkUTCTime y m d h mi s)
-readDateTime s = fail ("Error parsing dateTime '" ++ s ++ "'")
+readDateTime :: Monad m => String -> Err m LocalTime
+readDateTime dt =
+    maybe
+        (fail $ "Error parsing dateTime '" ++ dt ++ "'")
+        return
+        (parseTime defaultTimeLocale xmlRpcDateFormat dt)
 
 -- | Hack to avoid having to fill in all CalendarTime fields
 mkUTCTime :: Int -- ^ Year
