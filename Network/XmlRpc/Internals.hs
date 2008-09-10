@@ -34,12 +34,15 @@ import Prelude hiding (showString, catch)
 import Control.Monad
 import Data.Maybe
 import Data.List
+import Data.Time.Calendar
+import Data.Time.Calendar.WeekDate (toWeekDate)
+import Data.Time.Calendar.OrdinalDate (toOrdinalDate)
 import Data.Time.LocalTime
 import Data.Time.Format
 import Data.Word (Word8)
 import Numeric (showFFloat)
 import Data.Char
-import System.Time
+import System.Time (CalendarTime(..))
 import System.Locale
 import Control.Exception
 import Control.Monad.Error
@@ -277,6 +280,11 @@ instance XmlRpcType LocalTime where
 	      f _ = Nothing
     getType _ = TDateTime
 
+instance XmlRpcType CalendarTime where
+    toValue = toValue . calendarTimeToLocalTime
+    fromValue = liftM localTimeToCalendarTime . fromValue
+    getType _ = TDateTime
+
 -- FIXME: array elements may have different types
 instance XmlRpcType a => XmlRpcType [a] where
     toValue = ValueArray . map toValue 
@@ -460,22 +468,35 @@ readDateTime dt =
         return
         (parseTime defaultTimeLocale xmlRpcDateFormat dt)
 
--- | Hack to avoid having to fill in all CalendarTime fields
-mkUTCTime :: Int -- ^ Year
-	  -> Month -- ^ Month
-	  -> Int -- ^ Day
-	  -> Int -- ^ Hour
-	  -> Int -- ^ Minute
-	  -> Int -- ^ Second
-	  -> CalendarTime 
-mkUTCTime y m d h mi s = 
-    toUTCTime $ toClockTime $ 
-	      CalendarTime { ctYear = y, ctMonth = m, ctDay = d, 
-			     ctHour = h, ctMin = mi, ctSec = s, 
-			     ctPicosec = 0, ctWDay = undefined, 
-			     ctYDay = undefined, ctTZName = undefined,
-			     ctTZ = 0, ctIsDST = undefined }
+localTimeToCalendarTime :: LocalTime -> CalendarTime
+localTimeToCalendarTime l = 
+    let (y,mo,d) = toGregorian (localDay l)
+        TimeOfDay { todHour = h, todMin = mi, todSec = s } = localTimeOfDay l
+        (_,_,wd) = toWeekDate (localDay l)
+        (_,yd) = toOrdinalDate (localDay l)
+     in CalendarTime {
+	              ctYear    = fromIntegral y,
+		      ctMonth   = toEnum (mo-1),
+		      ctDay     = d,
+		      ctHour    = h,
+		      ctMin     = mi,
+		      ctSec     = truncate s,
+		      ctPicosec = 0,
+		      ctWDay    = toEnum (wd `mod` 7),
+		      ctYDay    = yd,
+		      ctTZName  = "UTC",
+		      ctTZ      = 0,
+		      ctIsDST   = False
+		     }
 
+calendarTimeToLocalTime :: CalendarTime -> LocalTime
+calendarTimeToLocalTime ct = 
+    let (y,mo,d) = (ctYear ct, ctMonth ct, ctDay ct)
+        (h,mi,s) = (ctHour ct, ctMin ct, ctSec ct)
+     in LocalTime { 
+                   localDay = fromGregorian (fromIntegral y) (fromEnum mo + 1) d, 
+                   localTimeOfDay = TimeOfDay { todHour = h, todMin = mi, todSec = fromIntegral s }
+                  }
 
 -- FIXME: what if data contains non-base64 characters?
 readBase64 :: Monad m => String -> Err m String
