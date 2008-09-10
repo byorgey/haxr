@@ -10,8 +10,8 @@
 --
 -- This module contains the core functionality of the XML-RPC library. 
 -- Most applications should not need to use this module. Client
--- applications should use "XmlRpcClient" and server applications should
--- use "XmlRpcServer".
+-- applications should use "Network.XmlRpc.Client" and server applications should
+-- use "Network.XmlRpc.Server".
 --
 -- The XML-RPC specifcation is available at <http://www.xmlrpc.com/spec>.
 --
