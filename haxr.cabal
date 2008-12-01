@@ -18,7 +18,7 @@ Flag split-base
 Library
   Build-depends: mtl, network, HaXml >= 1.13 && < 1.14, HTTP >= 1.0, dataenc == 0.11.1
   if flag(split-base)
-    Build-depends: base >= 3.0, array, old-time, old-locale, time
+    Build-depends: base == 3.*, array, old-time, old-locale, time
   else
     Build-depends: base < 3.0
   Exposed-Modules:
