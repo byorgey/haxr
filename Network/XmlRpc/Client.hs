@@ -48,6 +48,8 @@ import Network.Socket (withSocketsDo)
 import Network.HTTP
 import Network.Stream
 
+import qualified Data.ByteString.UTF8 as U
+import qualified Data.ByteString as BS
 
 -- | Gets the return value from a method response.
 --   Throws an exception if the response was a fault.
@@ -134,17 +136,17 @@ post_ uri auth content =
     -- FIXME: remove
     --putStrLn (show (request uri content))
     --putStrLn content
-    eresp <- simpleHTTP (request uri auth content)
+    eresp <- simpleHTTP (request uri auth (U.fromString content))
     resp <- handleE (fail . show) eresp
     case rspCode resp of
-		      (2,0,0) -> return (rspBody resp)
+		      (2,0,0) -> return (U.toString (rspBody resp))
 		      _ -> fail (httpError resp)
     where
     showRspCode (a,b,c) = map intToDigit [a,b,c]
     httpError resp = showRspCode (rspCode resp) ++ " " ++ rspReason resp
 
 -- | Create an XML-RPC compliant HTTP request.
-request :: URI -> URIAuthority -> String -> Request_String
+request :: URI -> URIAuthority -> BS.ByteString -> Request BS.ByteString
 request uri auth content = Request{ rqURI = uri, 
 				    rqMethod = POST, 
 				    rqHeaders = headers, 
@@ -153,7 +155,7 @@ request uri auth content = Request{ rqURI = uri,
     -- the HTTP module adds a Host header based on the URI
     headers = [Header HdrUserAgent userAgent,
 	       Header HdrContentType "text/xml",
-	       Header HdrContentLength (show (length content))	       
+	       Header HdrContentLength (show (BS.length content))
 	      ] ++ maybeToList (authHdr (user auth) (password auth))
 
 -- | Creates an Authorization header using the Basic scheme, 
