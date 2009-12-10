@@ -46,6 +46,7 @@ import Network.URI
 import Network.Socket (withSocketsDo)
 
 import Network.HTTP
+import Network.Stream
 
 
 -- | Gets the return value from a method response.
@@ -143,7 +144,7 @@ post_ uri auth content =
     httpError resp = showRspCode (rspCode resp) ++ " " ++ rspReason resp
 
 -- | Create an XML-RPC compliant HTTP request.
-request :: URI -> URIAuthority -> String -> Request
+request :: URI -> URIAuthority -> String -> Request_String
 request uri auth content = Request{ rqURI = uri, 
 				    rqMethod = POST, 
 				    rqHeaders = headers, 

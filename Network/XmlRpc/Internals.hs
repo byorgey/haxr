@@ -50,6 +50,7 @@ import Control.Monad.Identity
 import System.IO.Unsafe (unsafePerformIO)
 
 import Text.XML.HaXml.Xml2Haskell
+--import Text.XML.HaXml.XmlContent
 
 import qualified Network.XmlRpc.Base64 as Base64
 import qualified Network.XmlRpc.DTD_XMLRPC as XR
@@ -78,6 +79,14 @@ maybeToM :: Monad m =>
 	     -> m a -- ^ The resulting value in the monad.
 maybeToM err Nothing = fail err
 maybeToM _ (Just x) = return x
+
+-- | Convert a 'Maybe' value to a value in any monad
+eitherToM :: Monad m
+          => String -- ^ Error message to fail with for 'Nothing'
+	  -> Either String a -- ^ The 'Maybe' value.
+	  -> m a -- ^ The resulting value in the monad.
+eitherToM err (Left s)  = fail (err ++ ": " ++ s)
+eitherToM   _ (Right x) = return x
 
 -- | The format for \"dateTime.iso8601\"
 xmlRpcDateFormat = "%Y%m%dT%H:%M:%S"
@@ -324,10 +333,10 @@ getFieldMaybe x xs = case lookup x xs of
 --
 
 toXRValue :: Value -> XR.Value
-toXRValue (ValueInt x) = XR.Value [XR.Value_Int (XR.Int (showInt x))]
+toXRValue (ValueInt x) = XR.Value [XR.Value_AInt (XR.AInt (showInt x))]
 toXRValue (ValueBool b) = XR.Value [XR.Value_Boolean (XR.Boolean (showBool b))]
-toXRValue (ValueString s) = XR.Value [XR.Value_String (XR.String (showString s))]
-toXRValue (ValueDouble d) = XR.Value [XR.Value_Double (XR.Double (showDouble d))]
+toXRValue (ValueString s) = XR.Value [XR.Value_AString (XR.AString (showString s))]
+toXRValue (ValueDouble d) = XR.Value [XR.Value_ADouble (XR.ADouble (showDouble d))]
 toXRValue (ValueDateTime t) = 
    XR.Value [ XR.Value_DateTime_iso8601 (XR.DateTime_iso8601 (showDateTime t))]
 toXRValue (ValueBase64 s) = XR.Value [XR.Value_Base64 (XR.Base64 (showBase64 s))]
@@ -392,10 +401,10 @@ fromXRValue (XR.Value vs)
   unstr (XR.Value_Str x)  = x
 
   f (XR.Value_I4 (XR.I4 x)) = liftM ValueInt (readInt x)
-  f (XR.Value_Int (XR.Int x)) = liftM ValueInt (readInt x)
+  f (XR.Value_AInt (XR.AInt x)) = liftM ValueInt (readInt x)
   f (XR.Value_Boolean (XR.Boolean x)) = liftM ValueBool (readBool x)
-  f (XR.Value_Double (XR.Double x)) = liftM ValueDouble (readDouble x)
-  f (XR.Value_String (XR.String x)) = liftM ValueString (readString x)
+  f (XR.Value_ADouble (XR.ADouble x)) = liftM ValueDouble (readDouble x)
+  f (XR.Value_AString (XR.AString x)) = liftM ValueString (readString x)
   f (XR.Value_DateTime_iso8601 (XR.DateTime_iso8601 x)) =
     liftM ValueDateTime (readDateTime x)
   f (XR.Value_Base64 (XR.Base64 x)) = liftM ValueBase64 (readBase64 x)
