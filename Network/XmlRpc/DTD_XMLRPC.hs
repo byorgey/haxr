@@ -1,8 +1,7 @@
 module Network.XmlRpc.DTD_XMLRPC where
 
-import Text.XML.HaXml.Xml2Haskell
+import Text.XML.HaXml.XmlContent
 import Text.XML.HaXml.OneOfN
-import Data.Char (isSpace)
 
 
 {-Type decls-}
@@ -45,250 +44,232 @@ data MethodResponse = MethodResponseParams Params
 
 {-Instance decls-}
 
+instance HTypeable I4 where
+    toHType x = Defined "i4" [] []
 instance XmlContent I4 where
-    fromElem (CElem (Elem "i4" [] c0):rest) =
-        (\(a,ca)->
-           (Just (I4 a), rest))
-        (definite fromText "text" "i4" c0)
-    fromElem (CMisc _:rest) = fromElem rest
-    fromElem (CString _ s:rest) | all isSpace s = fromElem rest
-    fromElem rest = (Nothing, rest)
-    toElem (I4 a) =
-        [CElem (Elem "i4" [] (toText a))]
+    toContents (I4 a) =
+        [CElem (Elem "i4" [] (toText a)) ()]
+    parseContents = do
+        { e@(Elem _ [] _) <- element ["i4"]
+        ; interior e $ return (I4) `apply` (text `onFail` return "")
+        } `adjustErr` ("in <i4>, "++)
+
+instance HTypeable AInt where
+    toHType x = Defined "int" [] []
 instance XmlContent AInt where
-    fromElem (CElem (Elem "int" [] c0):rest) =
-        (\(a,ca)->
-           (Just (AInt a), rest))
-        (definite fromText "text" "int" c0)
-    fromElem (CMisc _:rest) = fromElem rest
-    fromElem (CString _ s:rest) | all isSpace s = fromElem rest
-    fromElem rest = (Nothing, rest)
-    toElem (AInt a) =
-        [CElem (Elem "int" [] (toText a))]
+    toContents (AInt a) =
+        [CElem (Elem "int" [] (toText a)) ()]
+    parseContents = do
+        { e@(Elem _ [] _) <- element ["int"]
+        ; interior e $ return (AInt) `apply` (text `onFail` return "")
+        } `adjustErr` ("in <int>, "++)
+
+instance HTypeable Boolean where
+    toHType x = Defined "boolean" [] []
 instance XmlContent Boolean where
-    fromElem (CElem (Elem "boolean" [] c0):rest) =
-        (\(a,ca)->
-           (Just (Boolean a), rest))
-        (definite fromText "text" "boolean" c0)
-    fromElem (CMisc _:rest) = fromElem rest
-    fromElem (CString _ s:rest) | all isSpace s = fromElem rest
-    fromElem rest = (Nothing, rest)
-    toElem (Boolean a) =
-        [CElem (Elem "boolean" [] (toText a))]
+    toContents (Boolean a) =
+        [CElem (Elem "boolean" [] (toText a)) ()]
+    parseContents = do
+        { e@(Elem _ [] _) <- element ["boolean"]
+        ; interior e $ return (Boolean) `apply` (text `onFail` return "")
+        } `adjustErr` ("in <boolean>, "++)
+
+instance HTypeable AString where
+    toHType x = Defined "string" [] []
 instance XmlContent AString where
-    fromElem (CElem (Elem "string" [] c0):rest) =
-        (\(a,ca)->
-           (Just (AString a), rest))
-        (definite fromText "text" "string" c0)
-    fromElem (CMisc _:rest) = fromElem rest
-    fromElem (CString _ s:rest) | all isSpace s = fromElem rest
-    fromElem rest = (Nothing, rest)
-    toElem (AString a) =
-        [CElem (Elem "string" [] (toText a))]
+    toContents (AString a) =
+        [CElem (Elem "string" [] (toText a)) ()]
+    parseContents = do
+        { e@(Elem _ [] _) <- element ["string"]
+        ; interior e $ return (AString) `apply` (text `onFail` return "")
+        } `adjustErr` ("in <string>, "++)
+
+instance HTypeable ADouble where
+    toHType x = Defined "double" [] []
 instance XmlContent ADouble where
-    fromElem (CElem (Elem "double" [] c0):rest) =
-        (\(a,ca)->
-           (Just (ADouble a), rest))
-        (definite fromText "text" "double" c0)
-    fromElem (CMisc _:rest) = fromElem rest
-    fromElem (CString _ s:rest) | all isSpace s = fromElem rest
-    fromElem rest = (Nothing, rest)
-    toElem (ADouble a) =
-        [CElem (Elem "double" [] (toText a))]
+    toContents (ADouble a) =
+        [CElem (Elem "double" [] (toText a)) ()]
+    parseContents = do
+        { e@(Elem _ [] _) <- element ["double"]
+        ; interior e $ return (ADouble) `apply` (text `onFail` return "")
+        } `adjustErr` ("in <double>, "++)
+
+instance HTypeable DateTime_iso8601 where
+    toHType x = Defined "dateTime.iso8601" [] []
 instance XmlContent DateTime_iso8601 where
-    fromElem (CElem (Elem "dateTime.iso8601" [] c0):rest) =
-        (\(a,ca)->
-           (Just (DateTime_iso8601 a), rest))
-        (definite fromText "text" "dateTime.iso8601" c0)
-    fromElem (CMisc _:rest) = fromElem rest
-    fromElem (CString _ s:rest) | all isSpace s = fromElem rest
-    fromElem rest = (Nothing, rest)
-    toElem (DateTime_iso8601 a) =
-        [CElem (Elem "dateTime.iso8601" [] (toText a))]
+    toContents (DateTime_iso8601 a) =
+        [CElem (Elem "dateTime.iso8601" [] (toText a)) ()]
+    parseContents = do
+        { e@(Elem _ [] _) <- element ["dateTime.iso8601"]
+        ; interior e $ return (DateTime_iso8601)
+                       `apply` (text `onFail` return "")
+        } `adjustErr` ("in <dateTime.iso8601>, "++)
+
+instance HTypeable Base64 where
+    toHType x = Defined "base64" [] []
 instance XmlContent Base64 where
-    fromElem (CElem (Elem "base64" [] c0):rest) =
-        (\(a,ca)->
-           (Just (Base64 a), rest))
-        (definite fromText "text" "base64" c0)
-    fromElem (CMisc _:rest) = fromElem rest
-    fromElem (CString _ s:rest) | all isSpace s = fromElem rest
-    fromElem rest = (Nothing, rest)
-    toElem (Base64 a) =
-        [CElem (Elem "base64" [] (toText a))]
+    toContents (Base64 a) =
+        [CElem (Elem "base64" [] (toText a)) ()]
+    parseContents = do
+        { e@(Elem _ [] _) <- element ["base64"]
+        ; interior e $ return (Base64) `apply` (text `onFail` return "")
+        } `adjustErr` ("in <base64>, "++)
+
+instance HTypeable Data where
+    toHType x = Defined "data" [] []
 instance XmlContent Data where
-    fromElem (CElem (Elem "data" [] c0):rest) =
-        (\(a,ca)->
-           (Just (Data a), rest))
-        (many fromElem c0)
-    fromElem (CMisc _:rest) = fromElem rest
-    fromElem (CString _ s:rest) | all isSpace s = fromElem rest
-    fromElem rest = (Nothing, rest)
-    toElem (Data a) =
-        [CElem (Elem "data" [] (concatMap toElem a))]
+    toContents (Data a) =
+        [CElem (Elem "data" [] (concatMap toContents a)) ()]
+    parseContents = do
+        { e@(Elem _ [] _) <- element ["data"]
+        ; interior e $ return (Data) `apply` many parseContents
+        } `adjustErr` ("in <data>, "++)
+
+instance HTypeable Array where
+    toHType x = Defined "array" [] []
 instance XmlContent Array where
-    fromElem (CElem (Elem "array" [] c0):rest) =
-        (\(a,ca)->
-           (Just (Array a), rest))
-        (definite fromElem "<data>" "array" c0)
-    fromElem (CMisc _:rest) = fromElem rest
-    fromElem (CString _ s:rest) | all isSpace s = fromElem rest
-    fromElem rest = (Nothing, rest)
-    toElem (Array a) =
-        [CElem (Elem "array" [] (toElem a))]
+    toContents (Array a) =
+        [CElem (Elem "array" [] (toContents a)) ()]
+    parseContents = do
+        { e@(Elem _ [] _) <- element ["array"]
+        ; interior e $ return (Array) `apply` parseContents
+        } `adjustErr` ("in <array>, "++)
+
+instance HTypeable Name where
+    toHType x = Defined "name" [] []
 instance XmlContent Name where
-    fromElem (CElem (Elem "name" [] c0):rest) =
-        (\(a,ca)->
-           (Just (Name a), rest))
-        (definite fromText "text" "name" c0)
-    fromElem (CMisc _:rest) = fromElem rest
-    fromElem (CString _ s:rest) | all isSpace s = fromElem rest
-    fromElem rest = (Nothing, rest)
-    toElem (Name a) =
-        [CElem (Elem "name" [] (toText a))]
+    toContents (Name a) =
+        [CElem (Elem "name" [] (toText a)) ()]
+    parseContents = do
+        { e@(Elem _ [] _) <- element ["name"]
+        ; interior e $ return (Name) `apply` (text `onFail` return "")
+        } `adjustErr` ("in <name>, "++)
+
+instance HTypeable Member where
+    toHType x = Defined "member" [] []
 instance XmlContent Member where
-    fromElem (CElem (Elem "member" [] c0):rest) =
-        (\(a,ca)->
-           (\(b,cb)->
-              (Just (Member a b), rest))
-           (definite fromElem "<value>" "member" ca))
-        (definite fromElem "<name>" "member" c0)
-    fromElem (CMisc _:rest) = fromElem rest
-    fromElem (CString _ s:rest) | all isSpace s = fromElem rest
-    fromElem rest = (Nothing, rest)
-    toElem (Member a b) =
-        [CElem (Elem "member" [] (toElem a ++ toElem b))]
+    toContents (Member a b) =
+        [CElem (Elem "member" [] (toContents a ++ toContents b)) ()]
+    parseContents = do
+        { e@(Elem _ [] _) <- element ["member"]
+        ; interior e $ return (Member) `apply` parseContents
+                       `apply` parseContents
+        } `adjustErr` ("in <member>, "++)
+
+instance HTypeable Struct where
+    toHType x = Defined "struct" [] []
 instance XmlContent Struct where
-    fromElem (CElem (Elem "struct" [] c0):rest) =
-        (\(a,ca)->
-           (Just (Struct a), rest))
-        (many fromElem c0)
-    fromElem (CMisc _:rest) = fromElem rest
-    fromElem (CString _ s:rest) | all isSpace s = fromElem rest
-    fromElem rest = (Nothing, rest)
-    toElem (Struct a) =
-        [CElem (Elem "struct" [] (concatMap toElem a))]
+    toContents (Struct a) =
+        [CElem (Elem "struct" [] (concatMap toContents a)) ()]
+    parseContents = do
+        { e@(Elem _ [] _) <- element ["struct"]
+        ; interior e $ return (Struct) `apply` many parseContents
+        } `adjustErr` ("in <struct>, "++)
+
+instance HTypeable Value where
+    toHType x = Defined "value" [] []
 instance XmlContent Value where
-    fromElem (CElem (Elem "value" [] c0):rest) =
-        (\(a,ca)->
-           (Just (Value a), rest))
-        (many fromElem c0)
-    fromElem (CMisc _:rest) = fromElem rest
-    fromElem (CString _ s:rest) | all isSpace s = fromElem rest
-    fromElem rest = (Nothing, rest)
-    toElem (Value a) =
-        [CElem (Elem "value" [] (concatMap toElem a))]
+    toContents (Value a) =
+        [CElem (Elem "value" [] (concatMap toContents a)) ()]
+    parseContents = do
+        { e@(Elem _ [] _) <- element ["value"]
+        ; interior e $ return (Value) `apply` many parseContents
+        } `adjustErr` ("in <value>, "++)
+
+instance HTypeable Value_ where
+    toHType x = Defined "value" [] []
 instance XmlContent Value_ where
-    fromElem c0 =
-        case (fromText c0) of
-        (Just a,rest) -> (Just (Value_Str a), rest)
-        (_,_) ->
-                case (fromElem c0) of
-                (Just a,rest) -> (Just (Value_I4 a), rest)
-                (_,_) ->
-                        case (fromElem c0) of
-                        (Just a,rest) -> (Just (Value_AInt a), rest)
-                        (_,_) ->
-                                case (fromElem c0) of
-                                (Just a,rest) -> (Just (Value_Boolean a), rest)
-                                (_,_) ->
-                                        case (fromElem c0) of
-                                        (Just a,rest) -> (Just (Value_AString a), rest)
-                                        (_,_) ->
-                                                case (fromElem c0) of
-                                                (Just a,rest) -> (Just (Value_DateTime_iso8601 a), rest)
-                                                (_,_) ->
-                                                        case (fromElem c0) of
-                                                        (Just a,rest) -> (Just (Value_ADouble a), rest)
-                                                        (_,_) ->
-                                                                case (fromElem c0) of
-                                                                (Just a,rest) -> (Just (Value_Base64 a), rest)
-                                                                (_,_) ->
-                                                                        case (fromElem c0) of
-                                                                        (Just a,rest) -> (Just (Value_Struct a), rest)
-                                                                        (_,_) ->
-                                                                                case (fromElem c0) of
-                                                                                (Just a,rest) -> (Just (Value_Array a), rest)
-                                                                                (_,_) ->
-                                                                                    (Nothing, c0)
-    fromElem (CMisc _:rest) = fromElem rest
-    fromElem (CString _ s:rest) | all isSpace s = fromElem rest
-    fromElem rest = (Nothing, rest)
-    toElem (Value_Str a) = toText a
-    toElem (Value_I4 a) = toElem a
-    toElem (Value_AInt a) = toElem a
-    toElem (Value_Boolean a) = toElem a
-    toElem (Value_AString a) = toElem a
-    toElem (Value_DateTime_iso8601 a) = toElem a
-    toElem (Value_ADouble a) = toElem a
-    toElem (Value_Base64 a) = toElem a
-    toElem (Value_Struct a) = toElem a
-    toElem (Value_Array a) = toElem a
+    toContents (Value_Str a) = toText a
+    toContents (Value_I4 a) = toContents a
+    toContents (Value_AInt a) = toContents a
+    toContents (Value_Boolean a) = toContents a
+    toContents (Value_AString a) = toContents a
+    toContents (Value_DateTime_iso8601 a) = toContents a
+    toContents (Value_ADouble a) = toContents a
+    toContents (Value_Base64 a) = toContents a
+    toContents (Value_Struct a) = toContents a
+    toContents (Value_Array a) = toContents a
+    parseContents = oneOf
+        [ return (Value_Str) `apply` text
+        , return (Value_I4) `apply` parseContents
+        , return (Value_AInt) `apply` parseContents
+        , return (Value_Boolean) `apply` parseContents
+        , return (Value_AString) `apply` parseContents
+        , return (Value_DateTime_iso8601) `apply` parseContents
+        , return (Value_ADouble) `apply` parseContents
+        , return (Value_Base64) `apply` parseContents
+        , return (Value_Struct) `apply` parseContents
+        , return (Value_Array) `apply` parseContents
+        ] `adjustErr` ("in <value>, "++)
+
+instance HTypeable Param where
+    toHType x = Defined "param" [] []
 instance XmlContent Param where
-    fromElem (CElem (Elem "param" [] c0):rest) =
-        (\(a,ca)->
-           (Just (Param a), rest))
-        (definite fromElem "<value>" "param" c0)
-    fromElem (CMisc _:rest) = fromElem rest
-    fromElem (CString _ s:rest) | all isSpace s = fromElem rest
-    fromElem rest = (Nothing, rest)
-    toElem (Param a) =
-        [CElem (Elem "param" [] (toElem a))]
+    toContents (Param a) =
+        [CElem (Elem "param" [] (toContents a)) ()]
+    parseContents = do
+        { e@(Elem _ [] _) <- element ["param"]
+        ; interior e $ return (Param) `apply` parseContents
+        } `adjustErr` ("in <param>, "++)
+
+instance HTypeable Params where
+    toHType x = Defined "params" [] []
 instance XmlContent Params where
-    fromElem (CElem (Elem "params" [] c0):rest) =
-        (\(a,ca)->
-           (Just (Params a), rest))
-        (many fromElem c0)
-    fromElem (CMisc _:rest) = fromElem rest
-    fromElem (CString _ s:rest) | all isSpace s = fromElem rest
-    fromElem rest = (Nothing, rest)
-    toElem (Params a) =
-        [CElem (Elem "params" [] (concatMap toElem a))]
+    toContents (Params a) =
+        [CElem (Elem "params" [] (concatMap toContents a)) ()]
+    parseContents = do
+        { e@(Elem _ [] _) <- element ["params"]
+        ; interior e $ return (Params) `apply` many parseContents
+        } `adjustErr` ("in <params>, "++)
+
+instance HTypeable MethodName where
+    toHType x = Defined "methodName" [] []
 instance XmlContent MethodName where
-    fromElem (CElem (Elem "methodName" [] c0):rest) =
-        (\(a,ca)->
-           (Just (MethodName a), rest))
-        (definite fromText "text" "methodName" c0)
-    fromElem (CMisc _:rest) = fromElem rest
-    fromElem (CString _ s:rest) | all isSpace s = fromElem rest
-    fromElem rest = (Nothing, rest)
-    toElem (MethodName a) =
-        [CElem (Elem "methodName" [] (toText a))]
+    toContents (MethodName a) =
+        [CElem (Elem "methodName" [] (toText a)) ()]
+    parseContents = do
+        { e@(Elem _ [] _) <- element ["methodName"]
+        ; interior e $ return (MethodName)
+                       `apply` (text `onFail` return "")
+        } `adjustErr` ("in <methodName>, "++)
+
+instance HTypeable MethodCall where
+    toHType x = Defined "methodCall" [] []
 instance XmlContent MethodCall where
-    fromElem (CElem (Elem "methodCall" [] c0):rest) =
-        (\(a,ca)->
-           (\(b,cb)->
-              (Just (MethodCall a b), rest))
-           (fromElem ca))
-        (definite fromElem "<methodName>" "methodCall" c0)
-    fromElem (CMisc _:rest) = fromElem rest
-    fromElem (CString _ s:rest) | all isSpace s = fromElem rest
-    fromElem rest = (Nothing, rest)
-    toElem (MethodCall a b) =
-        [CElem (Elem "methodCall" [] (toElem a ++ maybe [] toElem b))]
+    toContents (MethodCall a b) =
+        [CElem (Elem "methodCall" [] (toContents a ++
+                                      maybe [] toContents b)) ()]
+    parseContents = do
+        { e@(Elem _ [] _) <- element ["methodCall"]
+        ; interior e $ return (MethodCall) `apply` parseContents
+                       `apply` optional parseContents
+        } `adjustErr` ("in <methodCall>, "++)
+
+instance HTypeable Fault where
+    toHType x = Defined "fault" [] []
 instance XmlContent Fault where
-    fromElem (CElem (Elem "fault" [] c0):rest) =
-        (\(a,ca)->
-           (Just (Fault a), rest))
-        (definite fromElem "<value>" "fault" c0)
-    fromElem (CMisc _:rest) = fromElem rest
-    fromElem (CString _ s:rest) | all isSpace s = fromElem rest
-    fromElem rest = (Nothing, rest)
-    toElem (Fault a) =
-        [CElem (Elem "fault" [] (toElem a))]
+    toContents (Fault a) =
+        [CElem (Elem "fault" [] (toContents a)) ()]
+    parseContents = do
+        { e@(Elem _ [] _) <- element ["fault"]
+        ; interior e $ return (Fault) `apply` parseContents
+        } `adjustErr` ("in <fault>, "++)
+
+instance HTypeable MethodResponse where
+    toHType x = Defined "methodResponse" [] []
 instance XmlContent MethodResponse where
-    fromElem (CElem (Elem "methodResponse" [] c0):rest) =
-        case (fromElem c0) of
-        (Just a,_) -> (Just (MethodResponseParams a), rest)
-        (_,_) ->
-                case (fromElem c0) of
-                (Just a,_) -> (Just (MethodResponseFault a), rest)
-                (_,_) ->
-                    (Nothing, c0)
-    fromElem (CMisc _:rest) = fromElem rest
-    fromElem (CString _ s:rest) | all isSpace s = fromElem rest
-    fromElem rest = (Nothing, rest)
-    toElem (MethodResponseParams a) = [CElem (Elem "methodResponse" [] (toElem a) )]
-    toElem (MethodResponseFault a) = [CElem (Elem "methodResponse" [] (toElem a) )]
+    toContents (MethodResponseParams a) =
+        [CElem (Elem "methodResponse" [] (toContents a) ) ()]
+    toContents (MethodResponseFault a) =
+        [CElem (Elem "methodResponse" [] (toContents a) ) ()]
+    parseContents = do 
+        { e@(Elem _ [] _) <- element ["methodResponse"]
+        ; interior e $ oneOf
+            [ return (MethodResponseParams) `apply` parseContents
+            , return (MethodResponseFault) `apply` parseContents
+            ] `adjustErr` ("in <methodResponse>, "++)
+        }
+
 
 
 {-Done-}
