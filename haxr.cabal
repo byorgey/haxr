@@ -19,7 +19,7 @@ Flag old-base
   default: False
 
 Library
-  Build-depends: base < 4, mtl, network, HaXml >= 1.20 && < 1.21, HTTP >= 4000, dataenc, old-locale, old-time, time, array, utf8-string, bytestring
+  Build-depends: base < 4, mtl, network, HaXml >= 1.20 && < 1.21, HTTP >= 4000, dataenc, old-locale, old-time, time, array, utf8-string, bytestring, pretty
   Exposed-Modules:
         Network.XmlRpc.Client,
         Network.XmlRpc.Server,
