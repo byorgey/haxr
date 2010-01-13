@@ -49,8 +49,7 @@ import Control.Monad.Error
 import Control.Monad.Identity
 import System.IO.Unsafe (unsafePerformIO)
 
-import Text.XML.HaXml.Xml2Haskell
---import Text.XML.HaXml.XmlContent
+import Text.XML.HaXml.XmlContent
 
 import qualified Network.XmlRpc.Base64 as Base64
 import qualified Network.XmlRpc.DTD_XMLRPC as XR
@@ -232,7 +231,7 @@ typeError v = withType $ \t ->
        fail ("Wanted: "  
 	     ++ show (getType t)
 	     ++ "', got: '" 
-	     ++ showXml (toXRValue v) ++ "'") `asTypeOf` return t
+	     ++ showXml False (toXRValue v) ++ "'") `asTypeOf` return t
 
 -- a type hack for use in 'typeError'
 withType :: (a -> Err m a) -> Err m a
@@ -544,7 +543,7 @@ parseCall :: Monad m => String -> Err m MethodCall
 parseCall c = 
     do
     mxc <- errorToErr (readXml c)
-    xc <- maybeToM "Error parsing method call" mxc
+    xc <- eitherToM "Error parsing method call" mxc
     fromXRMethodCall xc
 
 -- | Parses a method response from XML.
@@ -552,7 +551,7 @@ parseResponse :: Monad m => String -> Err m MethodResponse
 parseResponse c = 
     do
     mxr <- errorToErr (readXml c)
-    xr <- maybeToM "Error parsing method response" mxr
+    xr <- eitherToM "Error parsing method response" mxr
     fromXRMethodResponse xr
 
 --
@@ -562,9 +561,9 @@ parseResponse c =
 -- | Makes an XML-representation of a method call.
 -- FIXME: pretty prints ugly XML
 renderCall :: MethodCall -> String
-renderCall = showXml . toXRMethodCall
+renderCall = showXml False . toXRMethodCall
 
 -- | Makes an XML-representation of a method response.
 -- FIXME: pretty prints ugly XML
 renderResponse :: MethodResponse -> String
-renderResponse  = showXml . toXRMethodResponse
+renderResponse  = showXml False . toXRMethodResponse
