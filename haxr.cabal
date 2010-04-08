@@ -1,6 +1,6 @@
 Name: haxr
 Version: 3000.6
-Cabal-version: >=1.2
+Cabal-version: >=1.6
 Build-type: Simple
 Copyright: Bjorn Bringert, 2003-2006
 License: BSD3
@@ -14,9 +14,18 @@ Description:
         HaXR is a library for writing XML-RPC 
         client and server applications in Haskell.
 
+Extra-Source-Files:
+        examples/make-stubs.hs        examples/parse_response.hs    examples/Person.hs
+        examples/PersonTH.hs          examples/person_client.hs     examples/person_server.hs
+        examples/raw_call.hs          examples/simple_client.hs     examples/simple_server.hs
+        examples/test_client.hs       examples/test_server.hs       examples/time-xmlrpc-com.hs
+        examples/validate.hs          examples/Makefile
+
+
 Flag old-base
   description: Old, monolithic base
   default: False
+
 
 Library
   Build-depends: base < 4, mtl, network, HaXml >= 1.20 && < 1.21, HTTP >= 4000, dataenc, old-locale, 
@@ -31,3 +40,4 @@ Library
         Network.XmlRpc.Base64,
         Network.XmlRpc.DTD_XMLRPC
   Extensions: OverlappingInstances, TypeSynonymInstances, FlexibleInstances, TemplateHaskell
+
