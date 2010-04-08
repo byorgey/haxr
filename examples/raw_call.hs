@@ -9,6 +9,7 @@ import Network.URI
 
 import Network.XmlRpc.Internals
 import Network.HTTP
+import Network.Stream
 
 parseArgs :: IO String
 parseArgs = do
@@ -63,7 +64,7 @@ post_ uri content =
     httpError resp = showRspCode (rspCode resp) ++ " " ++ rspReason resp
 
 -- | Create an XML-RPC compliant HTTP request
-request :: URI -> String -> Request
+request :: URI -> String -> Request String
 request uri content = Request{ rqURI = uri, 
 		       rqMethod = POST, 
 		       rqHeaders = headers, 

@@ -1,4 +1,4 @@
-{-# GHC_OPTIONS -fth #-}
+{-# OPTIONS_GHC -fth #-}
 
 -- | This module demonstrates how to handle heterogeneous structs
 --   using Template Haskell.

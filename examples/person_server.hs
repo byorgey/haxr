@@ -1,7 +1,7 @@
 -- | Example server using a heterogeneous struct.
 
 import Network.XmlRpc.Server
-import Person
+import PersonTH
 
 listPeople :: IO [Person]
 listPeople = return [

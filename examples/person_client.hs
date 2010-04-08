@@ -1,7 +1,7 @@
 -- | Example client using a heterogeneous struct.
 
 import Network.XmlRpc.Client
-import Person
+import PersonTH
 
 server = "http://localhost/~bjorn/cgi-bin/person_server"
 

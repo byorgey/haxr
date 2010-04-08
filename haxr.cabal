@@ -1,5 +1,5 @@
 Name: haxr
-Version: 3000.5
+Version: 3000.6
 Cabal-version: >=1.2
 Build-type: Simple
 Copyright: Bjorn Bringert, 2003-2006
@@ -7,7 +7,7 @@ License: BSD3
 License-file: LICENSE
 Author: Bjorn Bringert <bjorn@bringert.net>
 Maintainer: Gracjan Polak <gracjanpolak@gmail.com>
-Homepage: http://www.haskell.org/haxr/
+Homepage: http://www.haskell.org/haskellwiki/HaXR
 Category: Network
 Synopsis: XML-RPC client and server library.
 Description:
@@ -19,13 +19,15 @@ Flag old-base
   default: False
 
 Library
-  Build-depends: base < 4, mtl, network, HaXml >= 1.20 && < 1.21, HTTP >= 4000, dataenc, old-locale, old-time, time, array, utf8-string, bytestring, pretty
+  Build-depends: base < 4, mtl, network, HaXml >= 1.20 && < 1.21, HTTP >= 4000, dataenc, old-locale, 
+                 old-time, time, array, utf8-string, bytestring, pretty, template-haskell
   Exposed-Modules:
         Network.XmlRpc.Client,
         Network.XmlRpc.Server,
         Network.XmlRpc.Internals,
-        Network.XmlRpc.Introspect
+        Network.XmlRpc.Introspect,
+        Network.XmlRpc.THDeriveXmlRpcType
   Other-Modules:
         Network.XmlRpc.Base64,
         Network.XmlRpc.DTD_XMLRPC
-  Extensions: OverlappingInstances, TypeSynonymInstances, FlexibleInstances
+  Extensions: OverlappingInstances, TypeSynonymInstances, FlexibleInstances, TemplateHaskell
