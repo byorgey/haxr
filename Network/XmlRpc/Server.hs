@@ -33,6 +33,8 @@ import Network.XmlRpc.Internals
 import Data.Maybe
 import Control.Monad.Error
 import Control.Exception
+import qualified Codec.Binary.UTF8.String as U
+import System.IO
 
 serverName = "Haskell XmlRpcServer/0.1"
 
@@ -159,8 +161,10 @@ help m = ""
 cgiXmlRpcServer :: [(String,XmlRpcMethod)] -> IO ()
 cgiXmlRpcServer ms = 
     do
-    input <- getContents
-    output <- server ms input
+    hSetBinaryMode stdin True
+    hSetBinaryMode stdout True
+    input <- U.decodeString `fmap` getContents
+    output <- U.encodeString `fmap` server ms input
     putStr ("Server: " ++ serverName ++ crlf)
     putStr ("Content-Type: text/xml" ++ crlf)
     putStr ("Content-Length: " ++ show (length output) ++ crlf)
