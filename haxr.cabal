@@ -1,5 +1,5 @@
 Name: haxr
-Version: 3000.7
+Version: 3000.8
 Cabal-version: >=1.6
 Build-type: Simple
 Copyright: Bjorn Bringert, 2003-2006
@@ -21,14 +21,8 @@ Extra-Source-Files:
         examples/test_client.hs       examples/test_server.hs       examples/time-xmlrpc-com.hs
         examples/validate.hs          examples/Makefile
 
-
-Flag old-base
-  description: Old, monolithic base
-  default: False
-
-
 Library
-  Build-depends: base < 4, mtl, network, HaXml >= 1.20 && < 1.21, HTTP >= 4000, dataenc, old-locale, 
+  Build-depends: base < 5, mtl, network, HaXml >= 1.20 && < 1.21, HTTP >= 4000, dataenc, old-locale, 
                  old-time, time, array, utf8-string, bytestring, pretty, template-haskell
   Exposed-Modules:
         Network.XmlRpc.Client,
