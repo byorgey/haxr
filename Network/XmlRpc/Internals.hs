@@ -50,9 +50,8 @@ import Control.Monad.Identity
 import System.IO.Unsafe (unsafePerformIO)
 
 import Text.XML.HaXml.XmlContent
-import Text.XML.HaXml.Pretty
-import Text.PrettyPrint.HughesPJ
-
+import Network.XmlRpc.Pretty
+import Data.ByteString.Lazy.Char8 (ByteString, pack)
 import qualified Network.XmlRpc.Base64 as Base64
 import qualified Network.XmlRpc.DTD_XMLRPC as XR
 
@@ -595,17 +594,15 @@ parseResponse c =
 
 -- | Makes an XML-representation of a method call.
 -- FIXME: pretty prints ugly XML
-renderCall :: MethodCall -> String
+renderCall :: MethodCall -> ByteString
 renderCall = showXml' False . toXRMethodCall
 
 -- | Makes an XML-representation of a method response.
 -- FIXME: pretty prints ugly XML
-renderResponse :: MethodResponse -> String
+renderResponse :: MethodResponse -> ByteString
 renderResponse  = showXml' False . toXRMethodResponse
 
-showXml' :: XmlContent a => Bool -> a -> String
-showXml' dtd x =
-    let st = style{ mode = LeftMode }
-    in  case toContents x of
-        [CElem _ _] -> (renderStyle st . document . toXml dtd) x
-        _ -> ""
+showXml' :: XmlContent a => Bool -> a -> ByteString
+showXml' dtd x = case toContents x of
+                   [CElem _ _] -> (document . toXml dtd) x
+                   _ -> pack ""

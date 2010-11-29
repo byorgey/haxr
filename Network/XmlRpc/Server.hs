@@ -30,6 +30,8 @@ module Network.XmlRpc.Server
 
 import Network.XmlRpc.Internals
 
+import Data.ByteString.Lazy.Char8 (ByteString)
+import qualified Data.ByteString.Lazy.Char8 as B
 import Data.Maybe
 import Control.Monad.Error
 import Control.Exception
@@ -100,10 +102,9 @@ errorToResponse = handleError (return . Fault 0)
 
 -- | Reads a method call from a string, uses the supplied method
 --   to generate a response and returns that response as a string
-handleCall :: (MethodCall -> ServerResult) -> String -> IO String
-handleCall f str = do
-		       resp <- errorToResponse (parseCall str >>= f)
-		       return (renderResponse resp)
+handleCall :: (MethodCall -> ServerResult) -> String -> IO ByteString
+handleCall f str = do resp <- errorToResponse (parseCall str >>= f)
+		      return (renderResponse resp)
 
 -- | An XmlRpcMethod that looks up the method name in a table
 --   and uses that method to handle the call.
@@ -115,7 +116,7 @@ methods t c@(MethodCall name _) =
 
 
 -- | A server with introspection support
-server :: [(String,XmlRpcMethod)] -> String -> IO String
+server :: [(String,XmlRpcMethod)] -> String -> IO ByteString
 server t = handleCall (methods (addIntrospection t))
 
 
@@ -164,10 +165,11 @@ cgiXmlRpcServer ms =
     hSetBinaryMode stdin True
     hSetBinaryMode stdout True
     input <- U.decodeString `fmap` getContents
-    output <- U.encodeString `fmap` server ms input
+    --output <- U.encodeString `fmap` server ms input
+    output <- server ms input
     putStr ("Server: " ++ serverName ++ crlf)
     putStr ("Content-Type: text/xml" ++ crlf)
-    putStr ("Content-Length: " ++ show (length output) ++ crlf)
+    putStr ("Content-Length: " ++ show (B.length output) ++ crlf)
     putStr crlf
-    putStr output
+    B.putStr output
 	where crlf = "\r\n"

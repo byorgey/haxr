@@ -48,6 +48,7 @@ import Network.Socket (withSocketsDo)
 import Network.HTTP
 import Network.Stream
 
+import Data.ByteString.Lazy.Char8 (ByteString, toChunks, fromChunks)
 import qualified Data.ByteString.UTF8 as U
 import qualified Data.ByteString as BS
 
@@ -120,7 +121,7 @@ handleE _ (Right v) = return v
 -- | Post some content to a uri, return the content of the response
 --   or an error.
 -- FIXME: should we really use fail?
-post :: String -> String -> IO String
+post :: String -> ByteString -> IO String
 post url content = do
     uri <- maybeFail ("Bad URI: '" ++ url ++ "'") (parseURI url)
     let a = authority uri
@@ -130,13 +131,13 @@ post url content = do
 -- | Post some content to a uri, return the content of the response
 --   or an error.
 -- FIXME: should we really use fail?
-post_ :: URI -> URIAuthority -> String -> IO String
+post_ :: URI -> URIAuthority -> ByteString -> IO String
 post_ uri auth content = 
     do
     -- FIXME: remove
     --putStrLn (show (request uri content))
     --putStrLn content
-    eresp <- simpleHTTP (request uri auth (U.fromString content))
+    eresp <- simpleHTTP (request uri auth (BS.concat . toChunks $ content))
     resp <- handleE (fail . show) eresp
     case rspCode resp of
 		      (2,0,0) -> return (U.toString (rspBody resp))
