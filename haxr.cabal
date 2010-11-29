@@ -22,9 +22,10 @@ Extra-Source-Files:
         examples/validate.hs          examples/Makefile
 
 Library
-  Build-depends: base < 5, mtl == 2.*, network, HaXml >= 1.20 && < 1.21, 
-                 HTTP >= 4000, bytestring, dataenc, old-locale, old-time, time, 
-                 array, utf8-string, template-haskell, blaze-builder == 0.2.*
+  Build-depends: base < 5, mtl == 1.1.*, network == 2.2.1.*, 
+                 HaXml >= 1.20 && < 1.21, HTTP >= 4000, bytestring, dataenc, 
+                 old-locale, old-time, time, array, utf8-string, 
+                 template-haskell, blaze-builder == 0.2.*
   Exposed-Modules:
         Network.XmlRpc.Client,
         Network.XmlRpc.Server,
