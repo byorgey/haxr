@@ -38,7 +38,7 @@ module Network.XmlRpc.Client
 import qualified Network.XmlRpc.Base64 as Base64
 import Network.XmlRpc.Internals
 
-import Control.Exception (handleJust, userErrors)
+import Control.Exception (handleJust)
 import Data.Char
 import Data.Maybe
 import Data.Word (Word8)

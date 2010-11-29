@@ -51,8 +51,8 @@ type Signature = ([Type], Type)
 -- | The type of XML-RPC methods on the server.
 type XmlRpcMethod = (MethodCall -> ServerResult, Signature)
 
-showException :: Exception -> String
-showException ex = fromMaybe (show ex) (userErrors ex)
+showException :: SomeException -> String
+showException = show
 
 handleIO :: IO a -> Err IO a
 handleIO io = lift (try io) >>= either (fail . showException) return
