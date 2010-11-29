@@ -9,7 +9,8 @@ module Network.XmlRpc.Pretty (document, content, element,
 
 import Prelude hiding (maybe, elem, concat, null, head)
 import qualified Prelude as P
-import Data.ByteString.Lazy.Char8 (ByteString(), pack, elem, empty)
+import Data.ByteString.Lazy.Char8 (ByteString(), elem, empty)
+import qualified Data.ByteString.Lazy.UTF8 as BU
 import Text.XML.HaXml.Types
 import Blaze.ByteString.Builder hiding (empty)
 import Blaze.ByteString.Builder.Char.Utf8 (fromString)
@@ -36,7 +37,7 @@ fromLBS = MBuilder . Just . fromLazyByteString
 
 -- Helper needed when using Data.Binary.Builder.
 -- fromString :: String -> Builder
--- fromString = fromLazyByteString . pack
+-- fromString = fromLazyByteString . BU.fromString
 
 -- |Support for the OverloadedStrings extension to improve templating
 -- syntax.
@@ -316,13 +317,13 @@ pubidliteral :: PubidLiteral -> MBuilder
 pubidliteral (PubidLiteral s)
     | '"' `elem` s' = "'" <> fromLBS s' <> "'"
     | otherwise     = "\"" <> fromLBS s' <> "\""
-    where s' = pack s
+    where s' = BU.fromString s
 
 systemliteral :: SystemLiteral -> MBuilder
 systemliteral (SystemLiteral s)
     | '"' `elem` s' = "'" <> fromLBS s' <> "'"
     | otherwise     = "\"" <> fromLBS s' <> "\""
-    where s' = pack s
+    where s' = BU.fromString s
 
 chardata, cdsect :: [Char] -> MBuilder
 chardata s                     = {-if all isSpace s then empty else-} text s
@@ -330,5 +331,5 @@ cdsect c                       = "<![CDATA[" <> chardata c <> "]]>"
 
 containsDoubleQuote :: [EV] -> Bool
 containsDoubleQuote evs = any csq evs
-    where csq (EVString s) = '"' `elem` pack s
+    where csq (EVString s) = '"' `elem` BU.fromString s
           csq _            = False
