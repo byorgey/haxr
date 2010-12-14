@@ -1,11 +1,13 @@
 {-# LANGUAGE OverloadedStrings, GeneralizedNewtypeDeriving #-}
-module Network.XmlRpc.Pretty (document, content, element, 
-                              doctypedecl, prolog, cp) where
+
 -- | This is a fast non-pretty-printer for turning the internal representation
 --   of generic structured XML documents into Lazy ByteStrings.
 --   Like in Text.Xml.HaXml.Pretty, there is one pp function for each type in
 --   Text.Xml.HaXml.Types, so you can pretty-print as much or as little
 --   of the document as you wish.
+
+module Network.XmlRpc.Pretty (document, content, element, 
+                              doctypedecl, prolog, cp) where
 
 import Prelude hiding (maybe, elem, concat, null, head)
 import qualified Prelude as P
