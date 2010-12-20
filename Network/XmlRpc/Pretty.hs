@@ -14,9 +14,8 @@ import qualified Prelude as P
 import Data.ByteString.Lazy.Char8 (ByteString(), elem, empty)
 import qualified Data.ByteString.Lazy.UTF8 as BU
 import Text.XML.HaXml.Types
-import Blaze.ByteString.Builder hiding (empty)
+import Blaze.ByteString.Builder (Builder, fromLazyByteString, toLazyByteString)
 import Blaze.ByteString.Builder.Char.Utf8 (fromString)
---import Data.Binary.Builder hiding (empty)
 import Data.Maybe (isNothing)
 import Data.Monoid
 import qualified GHC.Exts as Ext
