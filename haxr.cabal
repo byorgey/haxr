@@ -1,5 +1,5 @@
 Name: haxr
-Version: 3000.8.1
+Version: 3000.8.2
 Cabal-version: >=1.6
 Build-type: Simple
 Copyright: Bjorn Bringert, 2003-2006
@@ -25,7 +25,7 @@ Library
   Build-depends: base < 5, mtl, network < 3, 
                  HaXml == 1.20.*, HTTP >= 4000, bytestring, dataenc, 
                  old-locale, old-time, time, array, utf8-string, 
-                 template-haskell, blaze-builder == 0.2.*
+                 template-haskell, blaze-builder >= 0.2 && < 0.4
   Exposed-Modules:
         Network.XmlRpc.Client,
         Network.XmlRpc.Server,
