@@ -2,6 +2,7 @@ module Network.XmlRpc.DTD_XMLRPC where
 
 import Text.XML.HaXml.XmlContent
 import Text.XML.HaXml.OneOfN
+import Text.XML.HaXml.Types (QName(..))
 
 
 {-Type decls-}
@@ -48,7 +49,7 @@ instance HTypeable I4 where
     toHType x = Defined "i4" [] []
 instance XmlContent I4 where
     toContents (I4 a) =
-        [CElem (Elem "i4" [] (toText a)) ()]
+        [CElem (Elem (N "i4") [] (toText a)) ()]
     parseContents = do
         { e@(Elem _ [] _) <- element ["i4"]
         ; interior e $ return (I4) `apply` (text `onFail` return "")
@@ -58,7 +59,7 @@ instance HTypeable AInt where
     toHType x = Defined "int" [] []
 instance XmlContent AInt where
     toContents (AInt a) =
-        [CElem (Elem "int" [] (toText a)) ()]
+        [CElem (Elem (N "int") [] (toText a)) ()]
     parseContents = do
         { e@(Elem _ [] _) <- element ["int"]
         ; interior e $ return (AInt) `apply` (text `onFail` return "")
@@ -68,7 +69,7 @@ instance HTypeable Boolean where
     toHType x = Defined "boolean" [] []
 instance XmlContent Boolean where
     toContents (Boolean a) =
-        [CElem (Elem "boolean" [] (toText a)) ()]
+        [CElem (Elem (N "boolean") [] (toText a)) ()]
     parseContents = do
         { e@(Elem _ [] _) <- element ["boolean"]
         ; interior e $ return (Boolean) `apply` (text `onFail` return "")
@@ -78,7 +79,7 @@ instance HTypeable AString where
     toHType x = Defined "string" [] []
 instance XmlContent AString where
     toContents (AString a) =
-        [CElem (Elem "string" [] (toText a)) ()]
+        [CElem (Elem (N "string") [] (toText a)) ()]
     parseContents = do
         { e@(Elem _ [] _) <- element ["string"]
         ; interior e $ return (AString) `apply` (text `onFail` return "")
@@ -88,7 +89,7 @@ instance HTypeable ADouble where
     toHType x = Defined "double" [] []
 instance XmlContent ADouble where
     toContents (ADouble a) =
-        [CElem (Elem "double" [] (toText a)) ()]
+        [CElem (Elem (N "double") [] (toText a)) ()]
     parseContents = do
         { e@(Elem _ [] _) <- element ["double"]
         ; interior e $ return (ADouble) `apply` (text `onFail` return "")
@@ -98,7 +99,7 @@ instance HTypeable DateTime_iso8601 where
     toHType x = Defined "dateTime.iso8601" [] []
 instance XmlContent DateTime_iso8601 where
     toContents (DateTime_iso8601 a) =
-        [CElem (Elem "dateTime.iso8601" [] (toText a)) ()]
+        [CElem (Elem (N "dateTime.iso8601") [] (toText a)) ()]
     parseContents = do
         { e@(Elem _ [] _) <- element ["dateTime.iso8601"]
         ; interior e $ return (DateTime_iso8601)
@@ -109,7 +110,7 @@ instance HTypeable Base64 where
     toHType x = Defined "base64" [] []
 instance XmlContent Base64 where
     toContents (Base64 a) =
-        [CElem (Elem "base64" [] (toText a)) ()]
+        [CElem (Elem (N "base64") [] (toText a)) ()]
     parseContents = do
         { e@(Elem _ [] _) <- element ["base64"]
         ; interior e $ return (Base64) `apply` (text `onFail` return "")
@@ -119,7 +120,7 @@ instance HTypeable Data where
     toHType x = Defined "data" [] []
 instance XmlContent Data where
     toContents (Data a) =
-        [CElem (Elem "data" [] (concatMap toContents a)) ()]
+        [CElem (Elem (N "data") [] (concatMap toContents a)) ()]
     parseContents = do
         { e@(Elem _ [] _) <- element ["data"]
         ; interior e $ return (Data) `apply` many parseContents
@@ -129,7 +130,7 @@ instance HTypeable Array where
     toHType x = Defined "array" [] []
 instance XmlContent Array where
     toContents (Array a) =
-        [CElem (Elem "array" [] (toContents a)) ()]
+        [CElem (Elem (N "array") [] (toContents a)) ()]
     parseContents = do
         { e@(Elem _ [] _) <- element ["array"]
         ; interior e $ return (Array) `apply` parseContents
@@ -139,7 +140,7 @@ instance HTypeable Name where
     toHType x = Defined "name" [] []
 instance XmlContent Name where
     toContents (Name a) =
-        [CElem (Elem "name" [] (toText a)) ()]
+        [CElem (Elem (N "name") [] (toText a)) ()]
     parseContents = do
         { e@(Elem _ [] _) <- element ["name"]
         ; interior e $ return (Name) `apply` (text `onFail` return "")
@@ -149,7 +150,7 @@ instance HTypeable Member where
     toHType x = Defined "member" [] []
 instance XmlContent Member where
     toContents (Member a b) =
-        [CElem (Elem "member" [] (toContents a ++ toContents b)) ()]
+        [CElem (Elem (N "member") [] (toContents a ++ toContents b)) ()]
     parseContents = do
         { e@(Elem _ [] _) <- element ["member"]
         ; interior e $ return (Member) `apply` parseContents
@@ -160,7 +161,7 @@ instance HTypeable Struct where
     toHType x = Defined "struct" [] []
 instance XmlContent Struct where
     toContents (Struct a) =
-        [CElem (Elem "struct" [] (concatMap toContents a)) ()]
+        [CElem (Elem (N "struct") [] (concatMap toContents a)) ()]
     parseContents = do
         { e@(Elem _ [] _) <- element ["struct"]
         ; interior e $ return (Struct) `apply` many parseContents
@@ -170,7 +171,7 @@ instance HTypeable Value where
     toHType x = Defined "value" [] []
 instance XmlContent Value where
     toContents (Value a) =
-        [CElem (Elem "value" [] (concatMap toContents a)) ()]
+        [CElem (Elem (N "value") [] (concatMap toContents a)) ()]
     parseContents = do
         { e@(Elem _ [] _) <- element ["value"]
         ; interior e $ return (Value) `apply` many parseContents
@@ -206,7 +207,7 @@ instance HTypeable Param where
     toHType x = Defined "param" [] []
 instance XmlContent Param where
     toContents (Param a) =
-        [CElem (Elem "param" [] (toContents a)) ()]
+        [CElem (Elem (N "param") [] (toContents a)) ()]
     parseContents = do
         { e@(Elem _ [] _) <- element ["param"]
         ; interior e $ return (Param) `apply` parseContents
@@ -216,7 +217,7 @@ instance HTypeable Params where
     toHType x = Defined "params" [] []
 instance XmlContent Params where
     toContents (Params a) =
-        [CElem (Elem "params" [] (concatMap toContents a)) ()]
+        [CElem (Elem (N "params") [] (concatMap toContents a)) ()]
     parseContents = do
         { e@(Elem _ [] _) <- element ["params"]
         ; interior e $ return (Params) `apply` many parseContents
@@ -226,7 +227,7 @@ instance HTypeable MethodName where
     toHType x = Defined "methodName" [] []
 instance XmlContent MethodName where
     toContents (MethodName a) =
-        [CElem (Elem "methodName" [] (toText a)) ()]
+        [CElem (Elem (N "methodName") [] (toText a)) ()]
     parseContents = do
         { e@(Elem _ [] _) <- element ["methodName"]
         ; interior e $ return (MethodName)
@@ -237,7 +238,7 @@ instance HTypeable MethodCall where
     toHType x = Defined "methodCall" [] []
 instance XmlContent MethodCall where
     toContents (MethodCall a b) =
-        [CElem (Elem "methodCall" [] (toContents a ++
+        [CElem (Elem (N "methodCall") [] (toContents a ++
                                       maybe [] toContents b)) ()]
     parseContents = do
         { e@(Elem _ [] _) <- element ["methodCall"]
@@ -249,7 +250,7 @@ instance HTypeable Fault where
     toHType x = Defined "fault" [] []
 instance XmlContent Fault where
     toContents (Fault a) =
-        [CElem (Elem "fault" [] (toContents a)) ()]
+        [CElem (Elem (N "fault") [] (toContents a)) ()]
     parseContents = do
         { e@(Elem _ [] _) <- element ["fault"]
         ; interior e $ return (Fault) `apply` parseContents
@@ -259,9 +260,9 @@ instance HTypeable MethodResponse where
     toHType x = Defined "methodResponse" [] []
 instance XmlContent MethodResponse where
     toContents (MethodResponseParams a) =
-        [CElem (Elem "methodResponse" [] (toContents a) ) ()]
+        [CElem (Elem (N "methodResponse") [] (toContents a) ) ()]
     toContents (MethodResponseFault a) =
-        [CElem (Elem "methodResponse" [] (toContents a) ) ()]
+        [CElem (Elem (N "methodResponse") [] (toContents a) ) ()]
     parseContents = do 
         { e@(Elem _ [] _) <- element ["methodResponse"]
         ; interior e $ oneOf

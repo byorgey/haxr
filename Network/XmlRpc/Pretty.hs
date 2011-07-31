@@ -106,6 +106,11 @@ parens p = "(" <> p <> ")"
 text :: String -> MBuilder
 text = MBuilder . Just . fromString
 
+name :: QName -> MBuilder
+name = MBuilder . Just . fromString . unQ
+  where unQ (QN (Namespace prefix uri) n) = prefix++":"++n
+        unQ (N n) = n
+
 ----
 -- Now for the XML pretty-printing interface.
 -- (Basically copied direct from Text.XML.HaXml.Pretty).
@@ -164,7 +169,7 @@ sddecl sd   | sd            = "standalone='yes'"
 
 doctypedeclB (DTD n eid ds)  = if P.null ds then hd <> ">"
                                else hd <+> " [" $$ vcatMap markupdecl ds $$ "]>"
-  where hd = "<!DOCTYPE" <+> text n <+> maybe externalid eid
+  where hd = "<!DOCTYPE" <+> name n <+> maybe externalid eid
 
 markupdecl (Element e)      = elementdecl e
 markupdecl (AttList a)      = attlistdecl a
@@ -172,19 +177,19 @@ markupdecl (Entity e)       = entitydecl e
 markupdecl (Notation n)     = notationdecl n
 markupdecl (MarkupMisc m)   = misc m
 
-elementB (Elem n as []) = "<" <> (text n <+> fsep (map attribute as)) <> "/>"
+elementB (Elem n as []) = "<" <> (name n <+> fsep (map attribute as)) <> "/>"
 elementB (Elem n as cs) 
-  | isText (P.head cs)  = "<" <> (text n <+> fsep (map attribute as)) <> ">" <>
-                          hcatMap contentB cs <> "</" <> text n <> ">"
-  | otherwise           = "<" <> (text n <+> fsep (map attribute as)) <> ">" <>
-                          hcatMap contentB cs <> "</" <> text n <> ">"
+  | isText (P.head cs)  = "<" <> (name n <+> fsep (map attribute as)) <> ">" <>
+                          hcatMap contentB cs <> "</" <> name n <> ">"
+  | otherwise           = "<" <> (name n <+> fsep (map attribute as)) <> ">" <>
+                          hcatMap contentB cs <> "</" <> name n <> ">"
 
 isText :: Content t -> Bool
 isText (CString _ _ _) = True
 isText (CRef _ _)      = True
 isText _               = False
 
-attribute (n,v) = text n <> "=" <> attvalue v
+attribute (n,v) = name n <> "=" <> attvalue v
 
 contentB (CElem e _)         = elementB e
 contentB (CString False s _) = chardata s
@@ -193,7 +198,7 @@ contentB (CRef r _)          = reference r
 contentB (CMisc m _)         = misc m
 
 elementdecl :: ElementDecl -> MBuilder
-elementdecl (ElementDecl n cs) = "<!ELEMENT" <+> text n <+>
+elementdecl (ElementDecl n cs) = "<!ELEMENT" <+> name n <+>
                                  contentspec cs <> ">"
 
 contentspec :: ContentSpec -> MBuilder
@@ -202,7 +207,7 @@ contentspec ANY             = "ANY"
 contentspec (Mixed m)       = mixed m
 contentspec (ContentSpec c) = cpB c
 
-cpB (TagName n m) = text n <> modifier m
+cpB (TagName n m) = name n <> modifier m
 cpB (Choice cs m) = parens (intercalate "|" (map cpB cs)) <> modifier m
 cpB (Seq cs m)    = parens (intercalate "," (map cpB cs)) <> modifier m
 
@@ -214,14 +219,14 @@ modifier Plus  = "+"
 
 mixed :: Mixed -> MBuilder
 mixed  PCDATA         = "(#PCDATA)"
-mixed (PCDATAplus ns) = "(#PCDATA |" <+> intercalate "|" (map text ns) <> ")*"
+mixed (PCDATAplus ns) = "(#PCDATA |" <+> intercalate "|" (map name ns) <> ")*"
 
 attlistdecl :: AttListDecl -> MBuilder
-attlistdecl (AttListDecl n ds) = "<!ATTLIST" <+> text n <+> 
+attlistdecl (AttListDecl n ds) = "<!ATTLIST" <+> name n <+> 
                                  fsep (map attdef ds) <> ">"
 
 attdef :: AttDef -> MBuilder
-attdef (AttDef n t d)          = text n <+> atttype t <+> defaultdecl d
+attdef (AttDef n t d)          = name n <+> atttype t <+> defaultdecl d
 
 atttype :: AttType -> MBuilder
 atttype  StringType            = "CDATA"

@@ -124,19 +124,17 @@ handleE _ (Right v) = return v
 post :: String -> ByteString -> IO String
 post url content = do
     uri <- maybeFail ("Bad URI: '" ++ url ++ "'") (parseURI url)
-    let a = authority uri
-    auth <- maybeFail ("Bad URI authority: '" ++ a ++ "'") (parseURIAuthority a)
+    let a = uriAuthority uri
+    auth <- maybeFail ("Bad URI authority: '" ++ show (fmap showAuth a) ++ "'") a
     post_ uri auth content
+  where showAuth (URIAuth u r p) = "URIAuth "++u++" "++r++" "++p
 
 -- | Post some content to a uri, return the content of the response
 --   or an error.
 -- FIXME: should we really use fail?
-post_ :: URI -> URIAuthority -> ByteString -> IO String
+post_ :: URI -> URIAuth -> ByteString -> IO String
 post_ uri auth content = 
     do
-    -- FIXME: remove
-    --putStrLn (show (request uri content))
-    --putStrLn content
     eresp <- simpleHTTP (request uri auth (BS.concat . toChunks $ content))
     resp <- handleE (fail . show) eresp
     case rspCode resp of
@@ -147,7 +145,7 @@ post_ uri auth content =
     httpError resp = showRspCode (rspCode resp) ++ " " ++ rspReason resp
 
 -- | Create an XML-RPC compliant HTTP request.
-request :: URI -> URIAuthority -> BS.ByteString -> Request BS.ByteString
+request :: URI -> URIAuth -> BS.ByteString -> Request BS.ByteString
 request uri auth content = Request{ rqURI = uri, 
 				    rqMethod = POST, 
 				    rqHeaders = headers, 
@@ -157,7 +155,10 @@ request uri auth content = Request{ rqURI = uri,
     headers = [Header HdrUserAgent userAgent,
 	       Header HdrContentType "text/xml",
 	       Header HdrContentLength (show (BS.length content))
-	      ] ++ maybeToList (authHdr (user auth) (password auth))
+	      ] ++ maybeToList (uncurry authHdr . parseUserInfo $ auth)
+    parseUserInfo info = let (u,pw) = break (==':') $ uriUserInfo info
+                         in ( if null u then Nothing else Just u
+                            , if null pw then Nothing else Just (tail pw))
 
 -- | Creates an Authorization header using the Basic scheme, 
 --   see RFC 2617 section 2.
