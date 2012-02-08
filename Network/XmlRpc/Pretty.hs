@@ -17,7 +17,7 @@ import Text.XML.HaXml.Types
 import Blaze.ByteString.Builder (Builder, fromLazyByteString, toLazyByteString)
 import Blaze.ByteString.Builder.Char.Utf8 (fromString)
 import Data.Maybe (isNothing)
-import Data.Monoid
+import Data.Monoid (Monoid, mempty, mconcat, mappend)
 import qualified GHC.Exts as Ext
 
 -- |A 'Builder' with a recognizable empty value.
