@@ -28,7 +28,7 @@ Library
                  HaXml == 1.22.*,
                  HTTP >= 4000,
                  bytestring,
-                 dataenc,
+                 base64-bytestring,
                  old-locale,
                  old-time,
                  time,

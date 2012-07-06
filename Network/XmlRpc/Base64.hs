@@ -3,8 +3,7 @@ module Network.XmlRpc.Base64 (
     decode
 ) where
 
-import qualified Codec.Binary.Base64 as B64
-import Data.Maybe
+import qualified Data.ByteString.Base64 as B64
 
 encode = B64.encode
-decode = fromJust . B64.decode
+decode = B64.decodeLenient

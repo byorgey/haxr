@@ -30,30 +30,32 @@ renderCall, renderResponse,
 Err, maybeToM, handleError, ioErrorToErr
 ) where
 
-import Prelude hiding (showString, catch)
-import Control.Monad
-import Data.Maybe
-import Data.List
-import Data.Time.Calendar
-import Data.Time.Calendar.WeekDate (toWeekDate)
-import Data.Time.Calendar.OrdinalDate (toOrdinalDate)
-import Data.Time.LocalTime
-import Data.Time.Format
-import Data.Word (Word8)
-import Numeric (showFFloat)
-import Data.Char
-import System.Time (CalendarTime(..))
-import System.Locale
-import Control.Exception
-import Control.Monad.Error
-import Control.Monad.Identity
-import System.IO.Unsafe (unsafePerformIO)
+import           Control.Exception
+import           Control.Monad
+import           Control.Monad.Error
+import           Control.Monad.Identity
+import           Data.Char (chr, ord)
+import           Data.Char
+import           Data.List
+import           Data.Maybe
+import           Data.Time.Calendar
+import           Data.Time.Calendar.OrdinalDate (toOrdinalDate)
+import           Data.Time.Calendar.WeekDate (toWeekDate)
+import           Data.Time.Format
+import           Data.Time.LocalTime
+import           Data.Word (Word8)
+import           Numeric (showFFloat)
+import           Prelude hiding (showString, catch)
+import           System.IO.Unsafe (unsafePerformIO)
+import           System.Locale
+import           System.Time (CalendarTime(..))
 
-import Text.XML.HaXml.XmlContent
-import Network.XmlRpc.Pretty
-import Data.ByteString.Lazy.Char8 (ByteString, pack)
+import qualified Data.ByteString as BS (ByteString, pack, unpack)
+import qualified Data.ByteString.Lazy.Char8 as BSL (ByteString, pack)
 import qualified Network.XmlRpc.Base64 as Base64
 import qualified Network.XmlRpc.DTD_XMLRPC as XR
+import           Network.XmlRpc.Pretty
+import           Text.XML.HaXml.XmlContent
 
 --
 -- General utilities
@@ -154,7 +156,7 @@ data Value =
     | ValueString String -- ^ string
     | ValueDouble Double -- ^ double
     | ValueDateTime LocalTime -- ^ dateTime.iso8601
-    | ValueBase64 String -- ^ base 64
+    | ValueBase64 BS.ByteString -- ^ base 64.  NOTE that you should provide the raw data; the haxr library takes care of doing the base-64 encoding.
     | ValueStruct [(String,Value)] -- ^ struct
     | ValueArray [Value]  -- ^ array
       deriving (Eq, Show) -- for debugging 
@@ -271,9 +273,15 @@ instance XmlRpcType String where
     toValue = ValueString
     fromValue = simpleFromValue f
 	where f (ValueString x) = Just x
-	      f (ValueBase64 x) = Just x
 	      f _ = Nothing
     getType _ = TString
+
+instance XmlRpcType BS.ByteString where
+    toValue = ValueBase64
+    fromValue = simpleFromValue f
+        where f (ValueBase64 x) = Just x
+              f _ = Nothing
+    getType _ = TBase64
 
 instance XmlRpcType Double where
     toValue = ValueDouble
@@ -395,13 +403,8 @@ showDouble d = showFFloat Nothing d ""
 showDateTime :: LocalTime -> String
 showDateTime t = formatTime defaultTimeLocale xmlRpcDateFormat t
 
-showBase64 :: String -> String
-showBase64 = Base64.encode . stringToOctets
-    where
-        -- FIXME: this probably only works right for latin-1 strings
-	stringToOctets :: String -> [Word8]
-	stringToOctets = map (fromIntegral . fromEnum)
-
+showBase64 :: BS.ByteString -> String
+showBase64 = map (chr . fromEnum) . BS.unpack . Base64.encode
 
 toXRMethodCall :: MethodCall -> XR.MethodCall
 toXRMethodCall (MethodCall name vs) = 
@@ -541,13 +544,8 @@ calendarTimeToLocalTime ct =
                   }
 
 -- FIXME: what if data contains non-base64 characters?
-readBase64 :: Monad m => String -> Err m String
-readBase64 = return . octetsToString . Base64.decode
-    where
-        -- FIXME: this probably only works right for latin-1 strings
-	octetsToString :: [Word8] -> String
-	octetsToString = map (toEnum . fromIntegral)
-
+readBase64 :: Monad m => String -> Err m BS.ByteString
+readBase64 = return . Base64.decode . BS.pack . map (toEnum . ord)
 
 fromXRParams :: Monad m => XR.Params -> Err m [Value]
 fromXRParams (XR.Params xps) = mapM (\(XR.Param v) -> fromXRValue v) xps
@@ -594,15 +592,15 @@ parseResponse c =
 
 -- | Makes an XML-representation of a method call.
 -- FIXME: pretty prints ugly XML
-renderCall :: MethodCall -> ByteString
+renderCall :: MethodCall -> BSL.ByteString
 renderCall = showXml' False . toXRMethodCall
 
 -- | Makes an XML-representation of a method response.
 -- FIXME: pretty prints ugly XML
-renderResponse :: MethodResponse -> ByteString
+renderResponse :: MethodResponse -> BSL.ByteString
 renderResponse  = showXml' False . toXRMethodResponse
 
-showXml' :: XmlContent a => Bool -> a -> ByteString
+showXml' :: XmlContent a => Bool -> a -> BSL.ByteString
 showXml' dtd x = case toContents x of
                    [CElem _ _] -> (document . toXml dtd) x
-                   _ -> pack ""
+                   _ -> BSL.pack ""

@@ -169,10 +169,11 @@ authHdr :: Maybe String -- ^ User name, if any
 authHdr Nothing Nothing = Nothing
 authHdr u p = Just (Header HdrAuthorization ("Basic " ++ base64encode user_pass))
 	where user_pass = fromMaybe "" u ++ ":" ++ fromMaybe "" p
-	      base64encode = Base64.encode . stringToOctets
+	      base64encode = octetsToString . BS.unpack . Base64.encode . BS.pack . stringToOctets
 	      -- FIXME: this probably only works right for latin-1 strings
 	      stringToOctets :: String -> [Word8]
 	      stringToOctets = map (fromIntegral . fromEnum)
+              octetsToString = map (toEnum . fromEnum)
 
 --
 -- Utility functions
