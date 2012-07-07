@@ -21,6 +21,10 @@ Extra-Source-Files:
         examples/test_client.hs       examples/test_server.hs       examples/time-xmlrpc-com.hs
         examples/validate.hs          examples/Makefile
 
+Source-repository head
+  type:     darcs
+  location: http://code.haskell.org/haxr
+
 Library
   Build-depends: base < 5,
                  mtl,
