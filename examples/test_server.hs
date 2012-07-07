@@ -1,6 +1,6 @@
 -- A simple server
 
-import Time
+import System.Time
 import Network.XmlRpc.Server
 
 add :: Int -> Int -> IO Int

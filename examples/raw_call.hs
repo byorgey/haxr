@@ -2,10 +2,11 @@
 -- server and prints the response to standard output. Must be editied 
 -- to use the right server URL.
 
-import System (getArgs, exitFailure)
-import IO (hPutStrLn, stderr)
 import Data.Char
 import Network.URI
+import System.Environment (getArgs)
+import System.Exit (exitFailure)
+import System.IO (hPutStrLn, stderr)
 
 import Network.XmlRpc.Internals
 import Network.HTTP

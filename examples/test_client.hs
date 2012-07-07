@@ -1,8 +1,9 @@
 -- A simple client that calls the methods in test_server.hs
 
-import System (getArgs, exitFailure)
-import IO (hPutStrLn, stderr)
-import Time
+import System.Environment (getArgs)
+import System.Exit (exitFailure)
+import System.IO (hPutStrLn, stderr)
+import System.Time
 
 import Network.XmlRpc.Client
 

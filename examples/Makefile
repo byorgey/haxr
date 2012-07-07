@@ -1,5 +1,5 @@
 GHC = ghc
-GHCFLAGS = -O2 -package haxr -fallow-overlapping-instances
+GHCFLAGS = -O2 -package haxr -XOverlappingInstances
 
 TEST_PROGS = make-stubs parse_response \
              person_server person_client raw_call \
