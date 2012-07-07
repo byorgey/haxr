@@ -3,12 +3,12 @@
 -- Module      :  Network.XmlRpc.Internals
 -- Copyright   :  (c) Bjorn Bringert 2003
 -- License     :  BSD-style
--- 
+--
 -- Maintainer  :  bjorn@bringert.net
 -- Stability   :  experimental
 -- Portability :  non-portable (requires extensions and non-portable libraries)
 --
--- This module contains the core functionality of the XML-RPC library. 
+-- This module contains the core functionality of the XML-RPC library.
 -- Most applications should not need to use this module. Client
 -- applications should use "Network.XmlRpc.Client" and server applications should
 -- use "Network.XmlRpc.Server".
@@ -22,9 +22,9 @@ module Network.XmlRpc.Internals (
 MethodCall(..), MethodResponse(..),
 -- * XML-RPC types
 Value(..), Type(..), XmlRpcType(..),
--- * Converting from XML 
+-- * Converting from XML
 parseResponse, parseCall, getField, getFieldMaybe,
--- * Converting to XML 
+-- * Converting to XML
 renderCall, renderResponse,
 -- * Error monad
 Err, maybeToM, handleError, ioErrorToErr
@@ -63,7 +63,7 @@ import           Text.XML.HaXml.XmlContent
 
 -- | Replaces all occurances of a sublist in a list with another list.
 --   If the list to replace is the empty list, does nothing.
-replace :: Eq a => 
+replace :: Eq a =>
 	[a] -- ^ The sublist to replace when found
 	-> [a] -- ^ The list to replace it with
 	-> [a] -- ^ The list to replace in
@@ -75,7 +75,7 @@ replace ys zs xs@(x:xs')
     | otherwise = x : replace ys zs xs'
 
 -- | Convert a 'Maybe' value to a value in any monad
-maybeToM :: Monad m =>  
+maybeToM :: Monad m =>
 		String -- ^ Error message to fail with for 'Nothing'
 	     -> Maybe a -- ^ The 'Maybe' value.
 	     -> m a -- ^ The resulting value in the monad.
@@ -111,11 +111,11 @@ ioErrorToErr x = (liftIO x >>= return) `catchError` \e -> throwError (show e)
 
 -- | Handle errors from the error monad.
 handleError :: Monad m => (String -> m a) -> Err m a -> m a
-handleError h m = do 
+handleError h m = do
 		  Right x <- runErrorT (catchError m (lift . h))
 		  return x
 
-errorRead :: (Monad m, Read a) => 
+errorRead :: (Monad m, Read a) =>
 	     ReadS a -- ^ Parser
 	  -> String -- ^ Error message
 	  -> String -- ^ String to parse
@@ -124,9 +124,9 @@ errorRead r err s = case [x | (x,t) <- r s, ("","") <- lex t] of
 		          [x] -> return x
 		          _   -> fail (err ++ ": '" ++ s ++ "'")
 
--- | Convert an 'Int' to some instance of 'Enum', and fail if the 
+-- | Convert an 'Int' to some instance of 'Enum', and fail if the
 --   'Int' is out of range.
-errorToEnum :: (Monad m, Bounded a, Enum a) => 
+errorToEnum :: (Monad m, Bounded a, Enum a) =>
 	       String -- ^ Error message
 	    -> Int
 	    -> Err m a
@@ -139,18 +139,18 @@ errorToEnum err x | x < fromEnum (minBound `asTypeOf` r) = fail err
 -- Types for methods calls and responses
 --
 
--- | An XML-RPC method call. Consists of a method name and a list of 
+-- | An XML-RPC method call. Consists of a method name and a list of
 --   parameters.
 data MethodCall = MethodCall String [Value]
-		  deriving (Eq, Show) -- for debugging 
+		  deriving (Eq, Show) -- for debugging
 
 -- | An XML-RPC response.
 data MethodResponse = Return Value -- ^ A method response returning a value
 		    | Fault Int String -- ^ A fault response
-		      deriving (Eq, Show) -- for debugging 
+		      deriving (Eq, Show) -- for debugging
 
 -- | An XML-RPC value.
-data Value = 
+data Value =
       ValueInt Int -- ^ int or i4
     | ValueBool Bool -- ^ bool
     | ValueString String -- ^ string
@@ -159,10 +159,10 @@ data Value =
     | ValueBase64 BS.ByteString -- ^ base 64.  NOTE that you should provide the raw data; the haxr library takes care of doing the base-64 encoding.
     | ValueStruct [(String,Value)] -- ^ struct
     | ValueArray [Value]  -- ^ array
-      deriving (Eq, Show) -- for debugging 
+      deriving (Eq, Show) -- for debugging
 
 -- | An XML-RPC value. Use for error messages and introspection.
-data Type = 
+data Type =
 	  TInt
 	  | TBool
 	  | TString
@@ -198,11 +198,11 @@ instance Read Type where
 
 -- | Gets the value of a struct member
 structGetValue :: Monad m => String -> Value -> Err m Value
-structGetValue n (ValueStruct t) = 
+structGetValue n (ValueStruct t) =
     maybeToM ("Unknown member '" ++ n ++ "'") (lookup n t)
 structGetValue _ _ = fail "Value is not a struct"
 
--- | Builds a fault struct 
+-- | Builds a fault struct
 faultStruct :: Int -> String -> Value
 faultStruct code str = ValueStruct [("faultCode",ValueInt code),
 				    ("faultString",ValueString str)]
@@ -211,9 +211,9 @@ faultStruct code str = ValueStruct [("faultCode",ValueInt code),
 -- "The body of the response is a single XML structure, a
 -- <methodResponse>, which can contain a single <params> which contains a
 -- single <param> which contains a single <value>."
-onlyOneResult :: Monad m => [Value] -> Err m Value 
-onlyOneResult [] = fail "Method returned no result" 
-onlyOneResult [x] = return x 
+onlyOneResult :: Monad m => [Value] -> Err m Value
+onlyOneResult [] = fail "Method returned no result"
+onlyOneResult [x] = return x
 onlyOneResult _ = fail "Method returned more than one result"
 
 --
@@ -231,18 +231,18 @@ class XmlRpcType a where
 
 typeError :: (XmlRpcType a, Monad m) => Value -> Err m a
 typeError v = withType $ \t ->
-       fail ("Wanted: "  
+       fail ("Wanted: "
 	     ++ show (getType t)
-	     ++ "', got: '" 
+	     ++ "', got: '"
 	     ++ showXml False (toXRValue v) ++ "'") `asTypeOf` return t
 
 -- a type hack for use in 'typeError'
 withType :: (a -> Err m a) -> Err m a
 withType f = f undefined
 
-simpleFromValue :: (Monad m, XmlRpcType a) => (Value -> Maybe a) 
+simpleFromValue :: (Monad m, XmlRpcType a) => (Value -> Maybe a)
 		-> Value -> Err m a
-simpleFromValue f v = 
+simpleFromValue f v =
     maybe (typeError v) return (f v)
 
 
@@ -304,7 +304,7 @@ instance XmlRpcType CalendarTime where
 
 -- FIXME: array elements may have different types
 instance XmlRpcType a => XmlRpcType [a] where
-    toValue = ValueArray . map toValue 
+    toValue = ValueArray . map toValue
     fromValue v = case v of
 			 ValueArray xs -> mapM fromValue xs
 			 _ -> typeError v
@@ -320,28 +320,28 @@ instance XmlRpcType a => XmlRpcType [(String,a)] where
     getType _ = TStruct
 
 -- Tuple instances may be used for heterogenous array types.
-instance (XmlRpcType a, XmlRpcType b, XmlRpcType c, XmlRpcType d, 
-          XmlRpcType e) => 
+instance (XmlRpcType a, XmlRpcType b, XmlRpcType c, XmlRpcType d,
+          XmlRpcType e) =>
          XmlRpcType (a,b,c,d,e) where
-    toValue (v,w,x,y,z) = 
+    toValue (v,w,x,y,z) =
         ValueArray [toValue v, toValue w, toValue x, toValue y, toValue z]
-    fromValue (ValueArray [v,w,x,y,z]) = 
-        liftM5 (,,,,) (fromValue v) (fromValue w) (fromValue x) 
-                      (fromValue y) (fromValue z) 
+    fromValue (ValueArray [v,w,x,y,z]) =
+        liftM5 (,,,,) (fromValue v) (fromValue w) (fromValue x)
+                      (fromValue y) (fromValue z)
     fromValue _ = throwError "Expected 5-element tuple!"
     getType _ = TArray
 
-instance (XmlRpcType a, XmlRpcType b, XmlRpcType c, XmlRpcType d) => 
+instance (XmlRpcType a, XmlRpcType b, XmlRpcType c, XmlRpcType d) =>
          XmlRpcType (a,b,c,d) where
     toValue (w,x,y,z) = ValueArray [toValue w, toValue x, toValue y, toValue z]
-    fromValue (ValueArray [w,x,y,z]) = 
+    fromValue (ValueArray [w,x,y,z]) =
         liftM4 (,,,) (fromValue w) (fromValue x) (fromValue y) (fromValue z)
     fromValue _ = throwError "Expected 4-element tuple!"
     getType _ = TArray
 
 instance (XmlRpcType a, XmlRpcType b, XmlRpcType c) => XmlRpcType (a,b,c) where
     toValue (x,y,z) = ValueArray [toValue x, toValue y, toValue z]
-    fromValue (ValueArray [x,y,z]) = 
+    fromValue (ValueArray [x,y,z]) =
         liftM3 (,,) (fromValue x) (fromValue y) (fromValue z)
     fromValue _ = throwError "Expected 3-element tuple!"
     getType _ = TArray
@@ -353,19 +353,19 @@ instance (XmlRpcType a, XmlRpcType b) => XmlRpcType (a,b) where
     getType _ = TArray
 
 -- | Get a field value from a (possibly heterogeneous) struct.
-getField :: (Monad m, XmlRpcType a) => 
+getField :: (Monad m, XmlRpcType a) =>
 	    String           -- ^ Field name
 	 -> [(String,Value)] -- ^ Struct
 	 -> Err m a
-getField x xs = maybeToM ("struct member " ++ show x ++ " not found") 
+getField x xs = maybeToM ("struct member " ++ show x ++ " not found")
 		(lookup x xs) >>= fromValue
 
 -- | Get a field value from a (possibly heterogeneous) struct.
-getFieldMaybe :: (Monad m, XmlRpcType a) => 
+getFieldMaybe :: (Monad m, XmlRpcType a) =>
 	    String           -- ^ Field name
 	 -> [(String,Value)] -- ^ Struct
 	 -> Err m (Maybe a)
-getFieldMaybe x xs = case lookup x xs of 
+getFieldMaybe x xs = case lookup x xs of
 				      Nothing -> return Nothing
 				      Just v -> liftM Just (fromValue v)
 
@@ -378,11 +378,11 @@ toXRValue (ValueInt x) = XR.Value [XR.Value_AInt (XR.AInt (showInt x))]
 toXRValue (ValueBool b) = XR.Value [XR.Value_Boolean (XR.Boolean (showBool b))]
 toXRValue (ValueString s) = XR.Value [XR.Value_AString (XR.AString (showString s))]
 toXRValue (ValueDouble d) = XR.Value [XR.Value_ADouble (XR.ADouble (showDouble d))]
-toXRValue (ValueDateTime t) = 
+toXRValue (ValueDateTime t) =
    XR.Value [ XR.Value_DateTime_iso8601 (XR.DateTime_iso8601 (showDateTime t))]
 toXRValue (ValueBase64 s) = XR.Value [XR.Value_Base64 (XR.Base64 (showBase64 s))]
 toXRValue (ValueStruct xs) = XR.Value [XR.Value_Struct (XR.Struct (map toXRMember xs))]
-toXRValue (ValueArray xs) = 
+toXRValue (ValueArray xs) =
     XR.Value [XR.Value_Array (XR.Array (XR.Data (map toXRValue xs)))]
 
 showInt :: Int -> String
@@ -407,15 +407,15 @@ showBase64 :: BS.ByteString -> String
 showBase64 = BS.unpack . Base64.encode
 
 toXRMethodCall :: MethodCall -> XR.MethodCall
-toXRMethodCall (MethodCall name vs) = 
+toXRMethodCall (MethodCall name vs) =
     XR.MethodCall (XR.MethodName name) (Just (toXRParams vs))
 
 toXRMethodResponse :: MethodResponse -> XR.MethodResponse
 toXRMethodResponse (Return val) = XR.MethodResponseParams (toXRParams [val])
-toXRMethodResponse (Fault code str) = 
+toXRMethodResponse (Fault code str) =
     XR.MethodResponseFault (XR.Fault (toXRValue (faultStruct code str)))
 
-toXRParams :: [Value] -> XR.Params 
+toXRParams :: [Value] -> XR.Params
 toXRParams vs = XR.Params (map (XR.Param . toXRValue) vs)
 
 toXRMember :: (String, Value) -> XR.Member
@@ -444,10 +444,10 @@ fromXRValue (XR.Value vs)
   f (XR.Value_DateTime_iso8601 (XR.DateTime_iso8601 x)) =
     liftM ValueDateTime (readDateTime x)
   f (XR.Value_Base64 (XR.Base64 x)) = liftM ValueBase64 (readBase64 x)
-  f (XR.Value_Struct (XR.Struct ms)) = 
-    liftM ValueStruct (mapM fromXRMember ms) 
-  f (XR.Value_Array (XR.Array (XR.Data xs))) = 
-    liftM ValueArray (mapM fromXRValue xs) 
+  f (XR.Value_Struct (XR.Struct ms)) =
+    liftM ValueStruct (mapM fromXRMember ms)
+  f (XR.Value_Array (XR.Array (XR.Data xs))) =
+    liftM ValueArray (mapM fromXRValue xs)
 
 
 fromXRMember :: Monad m => XR.Member -> Err m (String,Value)
@@ -479,7 +479,7 @@ readBool s = errorRead readsBool "Error parsing boolean" s
 -- \"Any characters are allowed in a string except \< and &, which are
 -- encoded as &lt; and &amp;. A string can be used to encode binary data.\"
 --
--- To work with implementations (such as some Python bindings for example) 
+-- To work with implementations (such as some Python bindings for example)
 -- which also escape \>, &gt; is unescaped. This is non-standard, but
 -- seems unlikely to cause problems.
 readString :: Monad m => String -> Err m String
@@ -488,7 +488,7 @@ readString = return . replace "&amp;" "&" . replace "&lt;" "<"
 
 
 -- | From the XML-RPC specification:
--- 
+--
 -- There is no representation for infinity or negative infinity or \"not
 -- a number\". At this time, only decimal point notation is allowed, a
 -- plus or a minus, followed by any number of numeric characters,
@@ -514,7 +514,7 @@ readDateTime dt =
         (parseTime defaultTimeLocale xmlRpcDateFormat dt)
 
 localTimeToCalendarTime :: LocalTime -> CalendarTime
-localTimeToCalendarTime l = 
+localTimeToCalendarTime l =
     let (y,mo,d) = toGregorian (localDay l)
         TimeOfDay { todHour = h, todMin = mi, todSec = s } = localTimeOfDay l
         (_,_,wd) = toWeekDate (localDay l)
@@ -535,11 +535,11 @@ localTimeToCalendarTime l =
 		     }
 
 calendarTimeToLocalTime :: CalendarTime -> LocalTime
-calendarTimeToLocalTime ct = 
+calendarTimeToLocalTime ct =
     let (y,mo,d) = (ctYear ct, ctMonth ct, ctDay ct)
         (h,mi,s) = (ctHour ct, ctMin ct, ctSec ct)
-     in LocalTime { 
-                   localDay = fromGregorian (fromIntegral y) (fromEnum mo + 1) d, 
+     in LocalTime {
+                   localDay = fromGregorian (fromIntegral y) (fromEnum mo + 1) d,
                    localTimeOfDay = TimeOfDay { todHour = h, todMin = mi, todSec = fromIntegral s }
                   }
 
@@ -551,11 +551,11 @@ fromXRParams :: Monad m => XR.Params -> Err m [Value]
 fromXRParams (XR.Params xps) = mapM (\(XR.Param v) -> fromXRValue v) xps
 
 fromXRMethodCall :: Monad m => XR.MethodCall -> Err m MethodCall
-fromXRMethodCall (XR.MethodCall (XR.MethodName name) params) = 
+fromXRMethodCall (XR.MethodCall (XR.MethodName name) params) =
     liftM (MethodCall name) (fromXRParams (fromMaybe (XR.Params []) params))
 
 fromXRMethodResponse :: Monad m => XR.MethodResponse -> Err m MethodResponse
-fromXRMethodResponse (XR.MethodResponseParams xps) = 
+fromXRMethodResponse (XR.MethodResponseParams xps) =
     liftM Return (fromXRParams xps >>= onlyOneResult)
 fromXRMethodResponse (XR.MethodResponseFault (XR.Fault v)) =
     do
@@ -568,11 +568,11 @@ fromXRMethodResponse (XR.MethodResponseFault (XR.Fault v)) =
 
 --
 -- Parsing calls and reponses from XML
---     
+--
 
 -- | Parses a method call from XML.
 parseCall :: (Show e, MonadError e m) => String -> Err m MethodCall
-parseCall c = 
+parseCall c =
     do
     mxc <- errorToErr (readXml c)
     xc <- eitherToM "Error parsing method call" mxc
@@ -580,7 +580,7 @@ parseCall c =
 
 -- | Parses a method response from XML.
 parseResponse :: (Show e, MonadError e m) => String -> Err m MethodResponse
-parseResponse c = 
+parseResponse c =
     do
     mxr <- errorToErr (readXml c)
     xr <- eitherToM "Error parsing method response" mxr

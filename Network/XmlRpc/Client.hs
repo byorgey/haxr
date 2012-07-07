@@ -3,7 +3,7 @@
 -- Module      :  Network.XmlRpc.Client
 -- Copyright   :  (c) Bjorn Bringert 2003
 -- License     :  BSD-style
--- 
+--
 -- Maintainer  :  bjorn@bringert.net
 -- Stability   :  experimental
 -- Portability :  non-portable (requires extensions and non-portable libraries)
@@ -19,7 +19,7 @@
 -- >
 -- > add :: String -> Int -> Int -> IO Int
 -- > add url = remote url "examples.add"
--- > 
+-- >
 -- > main = do
 -- >        let x = 4
 -- >            y = 7
@@ -61,8 +61,8 @@ handleResponse (Fault code str) = fail ("Error " ++ show code ++ ": " ++ str)
 -- | Sends a method call to a server and returns the response.
 --   Throws an exception if the response was an error.
 doCall :: String -> MethodCall -> Err IO MethodResponse
-doCall url mc = 
-    do 
+doCall url mc =
+    do
     let req = renderCall mc
     --FIXME: remove
     --putStrLn req
@@ -72,7 +72,7 @@ doCall url mc =
     parseResponse resp
 
 -- | Low-level method calling function. Use this function if
---   you need to do custom conversions between XML-RPC types and 
+--   you need to do custom conversions between XML-RPC types and
 --   Haskell types.
 --   Throws an exception if the response was a fault.
 call :: String -- ^ URL for the XML-RPC server.
@@ -83,19 +83,19 @@ call url method args = doCall url (MethodCall method args) >>= handleResponse
 
 
 -- | Call a remote method.
-remote :: Remote a => 
+remote :: Remote a =>
 	  String -- ^ Server URL. May contain username and password on
 	         --   the format username:password\@ before the hostname.
        -> String -- ^ Remote method name.
-       -> a      -- ^ Any function 
-		 -- @(XmlRpcType t1, ..., XmlRpcType tn, XmlRpcType r) => 
+       -> a      -- ^ Any function
+		 -- @(XmlRpcType t1, ..., XmlRpcType tn, XmlRpcType r) =>
                  -- t1 -> ... -> tn -> IO r@
 remote u m = remote_ (\e -> "Error calling " ++ m ++ ": " ++ e) (call u m)
 
 class Remote a where
     remote_ :: (String -> String)        -- ^ Will be applied to all error
 					 --   messages.
-	    -> ([Value] -> Err IO Value) 
+	    -> ([Value] -> Err IO Value)
 	    -> a
 
 instance XmlRpcType a => Remote (IO a) where
@@ -146,9 +146,9 @@ post_ uri auth content =
 
 -- | Create an XML-RPC compliant HTTP request.
 request :: URI -> URIAuth -> BS.ByteString -> Request BS.ByteString
-request uri auth content = Request{ rqURI = uri, 
-				    rqMethod = POST, 
-				    rqHeaders = headers, 
+request uri auth content = Request{ rqURI = uri,
+				    rqMethod = POST,
+				    rqHeaders = headers,
 				    rqBody = content }
     where
     -- the HTTP module adds a Host header based on the URI
@@ -160,11 +160,11 @@ request uri auth content = Request{ rqURI = uri,
                          in ( if null u then Nothing else Just u
                             , if null pw then Nothing else Just (tail pw))
 
--- | Creates an Authorization header using the Basic scheme, 
+-- | Creates an Authorization header using the Basic scheme,
 --   see RFC 2617 section 2.
 authHdr :: Maybe String -- ^ User name, if any
 	-> Maybe String -- ^ Password, if any
-	-> Maybe Header -- ^ If user name or password was given, returns 
+	-> Maybe Header -- ^ If user name or password was given, returns
 	                --   an Authorization header, otherwise 'Nothing'
 authHdr Nothing Nothing = Nothing
 authHdr u p = Just (Header HdrAuthorization ("Basic " ++ base64encode user_pass))
