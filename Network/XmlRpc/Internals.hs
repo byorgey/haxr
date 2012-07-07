@@ -50,7 +50,7 @@ import           System.IO.Unsafe (unsafePerformIO)
 import           System.Locale
 import           System.Time (CalendarTime(..))
 
-import qualified Data.ByteString as BS (ByteString, pack, unpack)
+import qualified Data.ByteString.Char8 as BS (ByteString, pack, unpack)
 import qualified Data.ByteString.Lazy.Char8 as BSL (ByteString, pack)
 import qualified Network.XmlRpc.Base64 as Base64
 import qualified Network.XmlRpc.DTD_XMLRPC as XR
@@ -404,7 +404,7 @@ showDateTime :: LocalTime -> String
 showDateTime t = formatTime defaultTimeLocale xmlRpcDateFormat t
 
 showBase64 :: BS.ByteString -> String
-showBase64 = map (chr . fromEnum) . BS.unpack . Base64.encode
+showBase64 = BS.unpack . Base64.encode
 
 toXRMethodCall :: MethodCall -> XR.MethodCall
 toXRMethodCall (MethodCall name vs) = 
@@ -545,7 +545,7 @@ calendarTimeToLocalTime ct =
 
 -- FIXME: what if data contains non-base64 characters?
 readBase64 :: Monad m => String -> Err m BS.ByteString
-readBase64 = return . Base64.decode . BS.pack . map (toEnum . ord)
+readBase64 = return . Base64.decode . BS.pack
 
 fromXRParams :: Monad m => XR.Params -> Err m [Value]
 fromXRParams (XR.Params xps) = mapM (\(XR.Param v) -> fromXRValue v) xps

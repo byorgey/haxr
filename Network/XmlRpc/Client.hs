@@ -48,9 +48,9 @@ import Network.Socket (withSocketsDo)
 import Network.HTTP
 import Network.Stream
 
-import Data.ByteString.Lazy.Char8 (ByteString, toChunks, fromChunks)
+import qualified Data.ByteString.Lazy.Char8 as BSL (ByteString, toChunks)
 import qualified Data.ByteString.UTF8 as U
-import qualified Data.ByteString as BS
+import qualified Data.ByteString.Char8 as BS
 
 -- | Gets the return value from a method response.
 --   Throws an exception if the response was a fault.
@@ -121,7 +121,7 @@ handleE _ (Right v) = return v
 -- | Post some content to a uri, return the content of the response
 --   or an error.
 -- FIXME: should we really use fail?
-post :: String -> ByteString -> IO String
+post :: String -> BSL.ByteString -> IO String
 post url content = do
     uri <- maybeFail ("Bad URI: '" ++ url ++ "'") (parseURI url)
     let a = uriAuthority uri
@@ -132,10 +132,10 @@ post url content = do
 -- | Post some content to a uri, return the content of the response
 --   or an error.
 -- FIXME: should we really use fail?
-post_ :: URI -> URIAuth -> ByteString -> IO String
-post_ uri auth content = 
+post_ :: URI -> URIAuth -> BSL.ByteString -> IO String
+post_ uri auth content =
     do
-    eresp <- simpleHTTP (request uri auth (BS.concat . toChunks $ content))
+    eresp <- simpleHTTP (request uri auth (BS.concat . BSL.toChunks $ content))
     resp <- handleE (fail . show) eresp
     case rspCode resp of
 		      (2,0,0) -> return (U.toString (rspBody resp))
@@ -168,12 +168,8 @@ authHdr :: Maybe String -- ^ User name, if any
 	                --   an Authorization header, otherwise 'Nothing'
 authHdr Nothing Nothing = Nothing
 authHdr u p = Just (Header HdrAuthorization ("Basic " ++ base64encode user_pass))
-	where user_pass = fromMaybe "" u ++ ":" ++ fromMaybe "" p
-	      base64encode = octetsToString . BS.unpack . Base64.encode . BS.pack . stringToOctets
-	      -- FIXME: this probably only works right for latin-1 strings
-	      stringToOctets :: String -> [Word8]
-	      stringToOctets = map (fromIntegral . fromEnum)
-              octetsToString = map (toEnum . fromEnum)
+	where user_pass    = fromMaybe "" u ++ ":" ++ fromMaybe "" p
+	      base64encode = BS.unpack . Base64.encode . BS.pack
 
 --
 -- Utility functions
