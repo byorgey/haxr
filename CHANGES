@@ -1,3 +1,7 @@
+* 3000.9.0.1 (7 July 2012)
+
+  - Make everything in examples/ directory compile again
+
 * 3000.9 (7 July 2012)
 
   - Switch from dataenc to base64-bytestring for base64 encoding,
@@ -7,3 +11,4 @@
     ByteString
 
   - bump HaXml dependency upper bound to allow HaXml 1.23.*
+
