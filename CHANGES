@@ -1,0 +1,9 @@
+* 3000.9 (7 July 2012)
+
+  - Switch from dataenc to base64-bytestring for base64 encoding,
+    resulting in dramatically improved efficiency
+
+  - Change the argument type of ValueBase64 constructor from String to
+    ByteString
+
+  - bump HaXml dependency upper bound to allow HaXml 1.23.*
