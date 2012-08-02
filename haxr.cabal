@@ -20,6 +20,7 @@ Extra-Source-Files:
         examples/raw_call.hs          examples/simple_client.hs     examples/simple_server.hs
         examples/test_client.hs       examples/test_server.hs       examples/time-xmlrpc-com.hs
         examples/validate.hs          examples/Makefile
+Bug-reports: http://code.google.com/p/byorgey/issues/list?q=Project:haxr
 
 Source-repository head
   type:     darcs
