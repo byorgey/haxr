@@ -15,6 +15,7 @@ Description:
         client and server applications in Haskell.
 
 Extra-Source-Files:
+        CHANGES
         examples/make-stubs.hs        examples/parse_response.hs    examples/Person.hs
         examples/PersonTH.hs          examples/person_client.hs     examples/person_server.hs
         examples/raw_call.hs          examples/simple_client.hs     examples/simple_server.hs
