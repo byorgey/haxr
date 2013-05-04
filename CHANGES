@@ -1,3 +1,14 @@
+* 3000.9.1 (4 May 2013)
+
+  - Expose Network.XmlRpc.DTD_XMLRPC from the library
+
+    The point is to allow converting to XML using functions from
+
+      http://hackage.haskell.org/packages/archive/HaXml/1.23.3/doc/html/Text-XML-HaXml-XmlContent.html
+
+    which allows for custom serialization of the XML to deal with
+    endpoints that don't parse XML correctly.
+
 * 3000.9.0.1 (7 July 2012)
 
   - Make everything in examples/ directory compile again

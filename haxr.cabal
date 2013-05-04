@@ -1,5 +1,5 @@
 Name: haxr
-Version: 3000.9.0.1
+Version: 3000.9.1
 Cabal-version: >=1.10
 Build-type: Simple
 Copyright: Bjorn Bringert, 2003-2006
@@ -47,10 +47,10 @@ Library
         Network.XmlRpc.Internals,
         Network.XmlRpc.Introspect,
         Network.XmlRpc.THDeriveXmlRpcType,
-        Network.XmlRpc.Pretty
-  Other-Modules:
-        Network.XmlRpc.Base64,
+        Network.XmlRpc.Pretty,
         Network.XmlRpc.DTD_XMLRPC
+  Other-Modules:
+        Network.XmlRpc.Base64
   Default-extensions: OverlappingInstances, TypeSynonymInstances, FlexibleInstances
   Other-extensions: OverloadedStrings, GeneralizedNewtypeDeriving, TemplateHaskell
   Default-language: Haskell2010
