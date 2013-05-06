@@ -30,8 +30,8 @@
 
 module Network.XmlRpc.Client
     (
-     remote,
-     call,
+     remote, remoteWithHeaders,
+     call, callWithHeaders,
      Remote
     ) where
 
@@ -60,13 +60,13 @@ handleResponse (Fault code str) = fail ("Error " ++ show code ++ ": " ++ str)
 
 -- | Sends a method call to a server and returns the response.
 --   Throws an exception if the response was an error.
-doCall :: String -> MethodCall -> Err IO MethodResponse
-doCall url mc =
+doCall :: String -> [Header] -> MethodCall -> Err IO MethodResponse
+doCall url headers mc =
     do
     let req = renderCall mc
     --FIXME: remove
     --putStrLn req
-    resp <- ioErrorToErr $ post url req
+    resp <- ioErrorToErr $ post url headers req
     --FIXME: remove
     --putStrLn resp
     parseResponse resp
@@ -79,7 +79,20 @@ call :: String -- ^ URL for the XML-RPC server.
      -> String -- ^ Method name.
      -> [Value] -- ^ The arguments.
      -> Err IO Value -- ^ The result
-call url method args = doCall url (MethodCall method args) >>= handleResponse
+call url method args = doCall url [] (MethodCall method args) >>= handleResponse
+
+-- | Low-level method calling function. Use this function if
+--   you need to do custom conversions between XML-RPC types and
+--   Haskell types. Takes a list of extra headers to add to the
+--   HTTP request.
+--   Throws an exception if the response was a fault.
+callWithHeaders :: String -- ^ URL for the XML-RPC server.
+		-> String -- ^ Method name.
+		-> [Header] -- ^ Extra headers to add to HTTP request.
+		-> [Value] -- ^ The arguments.
+		-> Err IO Value -- ^ The result
+callWithHeaders url method headers args =
+    doCall url headers (MethodCall method args) >>= handleResponse
 
 
 -- | Call a remote method.
@@ -91,6 +104,20 @@ remote :: Remote a =>
 		 -- @(XmlRpcType t1, ..., XmlRpcType tn, XmlRpcType r) =>
                  -- t1 -> ... -> tn -> IO r@
 remote u m = remote_ (\e -> "Error calling " ++ m ++ ": " ++ e) (call u m)
+
+-- | Call a remote method. Takes a list of extra headers to add to the HTTP
+--   request.
+remoteWithHeaders :: Remote a =>
+		     String   -- ^ Server URL. May contain username and password on
+			      --   the format username:password\@ before the hostname.
+		  -> String   -- ^ Remote method name.
+		  -> [Header] -- ^ Extra headers to add to HTTP request.
+		  -> a        -- ^ Any function
+			      -- @(XmlRpcType t1, ..., XmlRpcType tn, XmlRpcType r) =>
+			      -- t1 -> ... -> tn -> IO r@
+remoteWithHeaders u m headers =
+    remote_ (\e -> "Error calling " ++ m ++ ": " ++ e)
+	    (callWithHeaders u m headers)
 
 class Remote a where
     remote_ :: (String -> String)        -- ^ Will be applied to all error
@@ -121,21 +148,21 @@ handleE _ (Right v) = return v
 -- | Post some content to a uri, return the content of the response
 --   or an error.
 -- FIXME: should we really use fail?
-post :: String -> BSL.ByteString -> IO String
-post url content = do
+post :: String -> [Header] -> BSL.ByteString -> IO String
+post url headers content = do
     uri <- maybeFail ("Bad URI: '" ++ url ++ "'") (parseURI url)
     let a = uriAuthority uri
     auth <- maybeFail ("Bad URI authority: '" ++ show (fmap showAuth a) ++ "'") a
-    post_ uri auth content
+    post_ uri auth headers content
   where showAuth (URIAuth u r p) = "URIAuth "++u++" "++r++" "++p
 
 -- | Post some content to a uri, return the content of the response
 --   or an error.
 -- FIXME: should we really use fail?
-post_ :: URI -> URIAuth -> BSL.ByteString -> IO String
-post_ uri auth content =
+post_ :: URI -> URIAuth -> [Header] -> BSL.ByteString -> IO String
+post_ uri auth headers content =
     do
-    eresp <- simpleHTTP (request uri auth (BS.concat . BSL.toChunks $ content))
+    eresp <- simpleHTTP (request uri auth headers (BS.concat . BSL.toChunks $ content))
     resp <- handleE (fail . show) eresp
     case rspCode resp of
 		      (2,0,0) -> return (U.toString (rspBody resp))
@@ -145,17 +172,18 @@ post_ uri auth content =
     httpError resp = showRspCode (rspCode resp) ++ " " ++ rspReason resp
 
 -- | Create an XML-RPC compliant HTTP request.
-request :: URI -> URIAuth -> BS.ByteString -> Request BS.ByteString
-request uri auth content = Request{ rqURI = uri,
-				    rqMethod = POST,
-				    rqHeaders = headers,
-				    rqBody = content }
+request :: URI -> URIAuth -> [Header] -> BS.ByteString -> Request BS.ByteString
+request uri auth headers content = Request{ rqURI = uri,
+					    rqMethod = POST,
+					    rqHeaders = headers,
+					    rqBody = content }
     where
     -- the HTTP module adds a Host header based on the URI
     headers = [Header HdrUserAgent userAgent,
 	       Header HdrContentType "text/xml",
 	       Header HdrContentLength (show (BS.length content))
 	      ] ++ maybeToList (uncurry authHdr . parseUserInfo $ auth)
+	        ++ headers
     parseUserInfo info = let (u,pw) = break (==':') $ uriUserInfo info
                          in ( if null u then Nothing else Just u
                             , if null pw then Nothing else Just (tail pw))
