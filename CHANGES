@@ -1,3 +1,9 @@
+* 3000.9.2 (14 May 2013)
+
+  - Export new functions remoteWithHeaders and callWithHeaders, which
+    are variants of remote and call that allow the user to specify
+    extra custom headers.  Thanks to Ben Sinclair for the patch.
+
 * 3000.9.1 (4 May 2013)
 
   - Expose Network.XmlRpc.DTD_XMLRPC from the library
