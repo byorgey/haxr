@@ -31,7 +31,7 @@ Library
   Build-depends: base < 5,
                  mtl,
                  network < 3,
-                 HaXml >= 1.22 && < 1.24,
+                 HaXml >= 1.22 && < 1.25,
                  HTTP >= 4000,
                  bytestring,
                  base64-bytestring,
