@@ -35,22 +35,22 @@ module Network.XmlRpc.Client
      Remote
     ) where
 
-import qualified Network.XmlRpc.Base64 as Base64
-import Network.XmlRpc.Internals
+import qualified Network.XmlRpc.Base64      as Base64
+import           Network.XmlRpc.Internals
 
-import Control.Exception (handleJust)
-import Data.Char
-import Data.Maybe
-import Data.Word (Word8)
-import Network.URI
-import Network.Socket (withSocketsDo)
+import           Control.Exception          (handleJust)
+import           Data.Char
+import           Data.Maybe
+import           Data.Word                  (Word8)
+import           Network.Socket             (withSocketsDo)
+import           Network.URI
 
-import Network.HTTP
-import Network.Stream
+import           Network.HTTP
+import           Network.Stream
 
+import qualified Data.ByteString.Char8      as BS
 import qualified Data.ByteString.Lazy.Char8 as BSL (ByteString, toChunks)
-import qualified Data.ByteString.UTF8 as U
-import qualified Data.ByteString.Char8 as BS
+import qualified Data.ByteString.UTF8       as U
 
 -- | Gets the return value from a method response.
 --   Throws an exception if the response was a fault.
@@ -87,43 +87,43 @@ call url method args = doCall url [] (MethodCall method args) >>= handleResponse
 --   HTTP request.
 --   Throws an exception if the response was a fault.
 callWithHeaders :: String -- ^ URL for the XML-RPC server.
-		-> String -- ^ Method name.
-		-> [Header] -- ^ Extra headers to add to HTTP request.
-		-> [Value] -- ^ The arguments.
-		-> Err IO Value -- ^ The result
+                -> String -- ^ Method name.
+                -> [Header] -- ^ Extra headers to add to HTTP request.
+                -> [Value] -- ^ The arguments.
+                -> Err IO Value -- ^ The result
 callWithHeaders url method headers args =
     doCall url headers (MethodCall method args) >>= handleResponse
 
 
 -- | Call a remote method.
 remote :: Remote a =>
-	  String -- ^ Server URL. May contain username and password on
-	         --   the format username:password\@ before the hostname.
+          String -- ^ Server URL. May contain username and password on
+                 --   the format username:password\@ before the hostname.
        -> String -- ^ Remote method name.
        -> a      -- ^ Any function
-		 -- @(XmlRpcType t1, ..., XmlRpcType tn, XmlRpcType r) =>
+                 -- @(XmlRpcType t1, ..., XmlRpcType tn, XmlRpcType r) =>
                  -- t1 -> ... -> tn -> IO r@
 remote u m = remote_ (\e -> "Error calling " ++ m ++ ": " ++ e) (call u m)
 
 -- | Call a remote method. Takes a list of extra headers to add to the HTTP
 --   request.
 remoteWithHeaders :: Remote a =>
-		     String   -- ^ Server URL. May contain username and password on
-			      --   the format username:password\@ before the hostname.
-		  -> String   -- ^ Remote method name.
-		  -> [Header] -- ^ Extra headers to add to HTTP request.
-		  -> a        -- ^ Any function
-			      -- @(XmlRpcType t1, ..., XmlRpcType tn, XmlRpcType r) =>
-			      -- t1 -> ... -> tn -> IO r@
+                     String   -- ^ Server URL. May contain username and password on
+                              --   the format username:password\@ before the hostname.
+                  -> String   -- ^ Remote method name.
+                  -> [Header] -- ^ Extra headers to add to HTTP request.
+                  -> a        -- ^ Any function
+                              -- @(XmlRpcType t1, ..., XmlRpcType tn, XmlRpcType r) =>
+                              -- t1 -> ... -> tn -> IO r@
 remoteWithHeaders u m headers =
     remote_ (\e -> "Error calling " ++ m ++ ": " ++ e)
-	    (callWithHeaders u m headers)
+            (callWithHeaders u m headers)
 
 class Remote a where
     remote_ :: (String -> String)        -- ^ Will be applied to all error
-					 --   messages.
-	    -> ([Value] -> Err IO Value)
-	    -> a
+                                         --   messages.
+            -> ([Value] -> Err IO Value)
+            -> a
 
 instance XmlRpcType a => Remote (IO a) where
     remote_ h f = handleError (fail . h) $ f [] >>= fromValue
@@ -165,8 +165,8 @@ post_ uri auth headers content =
     eresp <- simpleHTTP (request uri auth headers (BS.concat . BSL.toChunks $ content))
     resp <- handleE (fail . show) eresp
     case rspCode resp of
-		      (2,0,0) -> return (U.toString (rspBody resp))
-		      _ -> fail (httpError resp)
+                      (2,0,0) -> return (U.toString (rspBody resp))
+                      _ -> fail (httpError resp)
     where
     showRspCode (a,b,c) = map intToDigit [a,b,c]
     httpError resp = showRspCode (rspCode resp) ++ " " ++ rspReason resp
@@ -191,13 +191,13 @@ request uri auth headers content = Request{ rqURI = uri,
 -- | Creates an Authorization header using the Basic scheme,
 --   see RFC 2617 section 2.
 authHdr :: Maybe String -- ^ User name, if any
-	-> Maybe String -- ^ Password, if any
-	-> Maybe Header -- ^ If user name or password was given, returns
-	                --   an Authorization header, otherwise 'Nothing'
+        -> Maybe String -- ^ Password, if any
+        -> Maybe Header -- ^ If user name or password was given, returns
+                        --   an Authorization header, otherwise 'Nothing'
 authHdr Nothing Nothing = Nothing
 authHdr u p = Just (Header HdrAuthorization ("Basic " ++ base64encode user_pass))
-	where user_pass    = fromMaybe "" u ++ ":" ++ fromMaybe "" p
-	      base64encode = BS.unpack . Base64.encode . BS.pack
+        where user_pass    = fromMaybe "" u ++ ":" ++ fromMaybe "" p
+              base64encode = BS.unpack . Base64.encode . BS.pack
 
 --
 -- Utility functions
