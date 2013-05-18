@@ -1,3 +1,8 @@
+* 3000.9.3 (18 May 2013)
+
+  - Critical bug fix --- do not use 3000.9.2, it is extremely broken
+    (hangs forever when trying to send a request).
+
 * 3000.9.2.1 (15 May 2013)
 
   - Allow HaXml-1.24
