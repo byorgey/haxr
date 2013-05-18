@@ -173,17 +173,17 @@ post_ uri auth headers content =
 
 -- | Create an XML-RPC compliant HTTP request.
 request :: URI -> URIAuth -> [Header] -> BS.ByteString -> Request BS.ByteString
-request uri auth headers content = Request{ rqURI = uri,
-					    rqMethod = POST,
-					    rqHeaders = headers,
-					    rqBody = content }
+request uri auth usrHeaders content = Request{ rqURI = uri,
+                                               rqMethod = POST,
+                                               rqHeaders = headers,
+                                               rqBody = content }
     where
     -- the HTTP module adds a Host header based on the URI
     headers = [Header HdrUserAgent userAgent,
-	       Header HdrContentType "text/xml",
-	       Header HdrContentLength (show (BS.length content))
-	      ] ++ maybeToList (uncurry authHdr . parseUserInfo $ auth)
-	        ++ headers
+               Header HdrContentType "text/xml",
+               Header HdrContentLength (show (BS.length content))
+              ] ++ maybeToList (uncurry authHdr . parseUserInfo $ auth)
+                ++ usrHeaders
     parseUserInfo info = let (u,pw) = break (==':') $ uriUserInfo info
                          in ( if null u then Nothing else Just u
                             , if null pw then Nothing else Just (tail pw))
