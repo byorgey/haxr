@@ -154,6 +154,7 @@ data Value =
       ValueInt Int -- ^ int or i4
     | ValueBool Bool -- ^ bool
     | ValueString String -- ^ string
+    | ValueUnwrapped String -- ^ no inner element
     | ValueDouble Double -- ^ double
     | ValueDateTime LocalTime -- ^ dateTime.iso8601
     | ValueBase64 BS.ByteString -- ^ base 64.  NOTE that you should provide the raw data; the haxr library takes care of doing the base-64 encoding.
@@ -377,6 +378,7 @@ toXRValue :: Value -> XR.Value
 toXRValue (ValueInt x) = XR.Value [XR.Value_AInt (XR.AInt (showInt x))]
 toXRValue (ValueBool b) = XR.Value [XR.Value_Boolean (XR.Boolean (showBool b))]
 toXRValue (ValueString s) = XR.Value [XR.Value_AString (XR.AString (showString s))]
+toXRValue (ValueUnwrapped s) = XR.Value [XR.Value_Str s]
 toXRValue (ValueDouble d) = XR.Value [XR.Value_ADouble (XR.ADouble (showDouble d))]
 toXRValue (ValueDateTime t) =
    XR.Value [ XR.Value_DateTime_iso8601 (XR.DateTime_iso8601 (showDateTime t))]
@@ -428,7 +430,7 @@ toXRMember (n, v) = XR.Member (XR.Name n) (toXRValue v)
 fromXRValue :: Monad m => XR.Value -> Err m Value
 fromXRValue (XR.Value vs)
   =  case (filter notstr vs) of
-       []     -> liftM  (ValueString . concat) (mapM (readString . unstr) vs)
+       []     -> liftM  (ValueUnwrapped . concat) (mapM (readString . unstr) vs)
        (v:_)  -> f v
   where
   notstr (XR.Value_Str _)  = False
