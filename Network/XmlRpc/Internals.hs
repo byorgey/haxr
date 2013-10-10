@@ -33,8 +33,6 @@ Err, maybeToM, handleError, ioErrorToErr
 import           Control.Exception
 import           Control.Monad
 import           Control.Monad.Error
-import           Control.Monad.Identity
-import           Data.Char (chr, ord)
 import           Data.Char
 import           Data.List
 import           Data.Maybe
@@ -43,9 +41,8 @@ import           Data.Time.Calendar.OrdinalDate (toOrdinalDate)
 import           Data.Time.Calendar.WeekDate (toWeekDate)
 import           Data.Time.Format
 import           Data.Time.LocalTime
-import           Data.Word (Word8)
 import           Numeric (showFFloat)
-import           Prelude hiding (showString, catch)
+import           Prelude hiding (showString)
 import           System.IO.Unsafe (unsafePerformIO)
 import           System.Locale
 import           System.Time (CalendarTime(..))
@@ -91,6 +88,7 @@ eitherToM err (Left s)  = fail (err ++ ": " ++ s)
 eitherToM   _ (Right x) = return x
 
 -- | The format for \"dateTime.iso8601\"
+xmlRpcDateFormat :: String
 xmlRpcDateFormat = "%Y%m%dT%H:%M:%S"
 
 --
@@ -123,17 +121,6 @@ errorRead :: (Monad m, Read a) =>
 errorRead r err s = case [x | (x,t) <- r s, ("","") <- lex t] of
 		          [x] -> return x
 		          _   -> fail (err ++ ": '" ++ s ++ "'")
-
--- | Convert an 'Int' to some instance of 'Enum', and fail if the
---   'Int' is out of range.
-errorToEnum :: (Monad m, Bounded a, Enum a) =>
-	       String -- ^ Error message
-	    -> Int
-	    -> Err m a
-errorToEnum err x | x < fromEnum (minBound `asTypeOf` r) = fail err
-		  | x > fromEnum (maxBound `asTypeOf` r) = fail err
-		  | otherwise = return r
-    where r = toEnum x
 
 --
 -- Types for methods calls and responses
@@ -316,7 +303,7 @@ instance XmlRpcType a => XmlRpcType [(String,a)] where
     toValue xs = ValueStruct [(n, toValue v) | (n,v) <- xs]
 
     fromValue v = case v of
-		  ValueStruct xs -> mapM (\ (n,v) -> liftM ((,) n) (fromValue v)) xs
+		  ValueStruct xs -> mapM (\ (n,v') -> liftM ((,) n) (fromValue v')) xs
 		  _ -> typeError v
     getType _ = TStruct
 
