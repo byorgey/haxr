@@ -26,6 +26,12 @@ Value(..), Type(..), XmlRpcType(..),
 parseResponse, parseCall, getField, getFieldMaybe,
 -- * Converting to XML
 renderCall, renderResponse,
+-- * Converting to and from DTD types
+toXRValue, fromXRValue,
+toXRMethodCall, fromXRMethodCall,
+toXRMethodResponse, fromXRMethodResponse,
+toXRParams, fromXRParams,
+toXRMember, fromXRMember,
 -- * Error monad
 Err, maybeToM, handleError, ioErrorToErr
 ) where
