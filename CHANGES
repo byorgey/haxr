@@ -1,3 +1,9 @@
+* 3000.10 (10 October 2013)
+
+  - Add an "unwrapped" value type that does not wrap the inner value
+    string with an XML element.  This should only affect users who
+    depend on Network.XmlRpc.Internals.
+
 * 3000.9.3 (18 May 2013)
 
   - Critical bug fix --- do not use 3000.9.2, it is extremely broken
