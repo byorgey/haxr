@@ -1,3 +1,7 @@
+* 3000.10.1 (10 October 2013)
+
+  - Export XML conversion functions from Network.XmlRpc.Internals
+
 * 3000.10 (10 October 2013)
 
   - Add an "unwrapped" value type that does not wrap the inner value
