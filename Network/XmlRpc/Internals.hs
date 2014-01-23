@@ -144,7 +144,7 @@ data MethodResponse = Return Value -- ^ A method response returning a value
 
 -- | An XML-RPC value.
 data Value =
-      ValueInt Int -- ^ int or i4
+      ValueInt Int -- ^ int, i4, or i8
     | ValueBool Bool -- ^ bool
     | ValueString String -- ^ string
     | ValueUnwrapped String -- ^ no inner element
@@ -432,6 +432,7 @@ fromXRValue (XR.Value vs)
   unstr (XR.Value_Str x)  = x
 
   f (XR.Value_I4 (XR.I4 x)) = liftM ValueInt (readInt x)
+  f (XR.Value_I8 (XR.I8 x)) = liftM ValueInt (readInt x)
   f (XR.Value_AInt (XR.AInt x)) = liftM ValueInt (readInt x)
   f (XR.Value_Boolean (XR.Boolean x)) = liftM ValueBool (readBool x)
   f (XR.Value_ADouble (XR.ADouble x)) = liftM ValueDouble (readDouble x)
