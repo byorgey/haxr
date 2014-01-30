@@ -8,6 +8,7 @@ import Text.XML.HaXml.Types (QName(..))
 {-Type decls-}
 
 newtype I4 = I4 String 		deriving (Eq,Show)
+newtype I8 = I8 String 		deriving (Eq,Show)
 newtype AInt = AInt String 		deriving (Eq,Show)
 newtype Boolean = Boolean String 		deriving (Eq,Show)
 newtype AString = AString String 		deriving (Eq,Show)
@@ -23,6 +24,7 @@ newtype Struct = Struct [Member] 		deriving (Eq,Show)
 newtype Value = Value [Value_] 		deriving (Eq,Show)
 data Value_ = Value_Str String
             | Value_I4 I4
+            | Value_I8 I8
             | Value_AInt AInt
             | Value_Boolean Boolean
             | Value_AString AString
@@ -54,6 +56,16 @@ instance XmlContent I4 where
         { e@(Elem _ [] _) <- element ["i4"]
         ; interior e $ return (I4) `apply` (text `onFail` return "")
         } `adjustErr` ("in <i4>, "++)
+
+instance HTypeable I8 where
+    toHType x = Defined "i8" [] []
+instance XmlContent I8 where
+    toContents (I8 a) =
+        [CElem (Elem (N "i8") [] (toText a)) ()]
+    parseContents = do
+        { e@(Elem _ [] _) <- element ["i8"]
+        ; interior e $ return (I8) `apply` (text `onFail` return "")
+        } `adjustErr` ("in <i8>, "++)
 
 instance HTypeable AInt where
     toHType x = Defined "int" [] []
@@ -182,6 +194,7 @@ instance HTypeable Value_ where
 instance XmlContent Value_ where
     toContents (Value_Str a) = toText a
     toContents (Value_I4 a) = toContents a
+    toContents (Value_I8 a) = toContents a
     toContents (Value_AInt a) = toContents a
     toContents (Value_Boolean a) = toContents a
     toContents (Value_AString a) = toContents a
@@ -193,6 +206,7 @@ instance XmlContent Value_ where
     parseContents = oneOf
         [ return (Value_Str) `apply` text
         , return (Value_I4) `apply` parseContents
+        , return (Value_I8) `apply` parseContents
         , return (Value_AInt) `apply` parseContents
         , return (Value_Boolean) `apply` parseContents
         , return (Value_AString) `apply` parseContents
