@@ -1,3 +1,8 @@
+* 3000.10.2 (30 January 2014)
+
+  - Adds support for i8 (64-bit integer) types: see new I8 type in
+    Network.XmlRpc.DTD_XMLRPC. Thanks to Jorge Peña for the patch.
+
 * 3000.10.1.1 (10 October 2013)
 
   - fix build under GHC 7.4
