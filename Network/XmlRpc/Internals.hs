@@ -267,6 +267,7 @@ instance XmlRpcType String where
     toValue = ValueString
     fromValue = simpleFromValue f
 	where f (ValueString x) = Just x
+              f (ValueUnwrapped x) = Just x
 	      f _ = Nothing
     getType _ = TString
 

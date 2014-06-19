@@ -1,3 +1,8 @@
+* 3000.10.3 (18 June 2014)
+
+  - Parse unwrapped text as a String value in accordance with the
+    XML-RPC spec.
+
 * 3000.10.2 (30 January 2014)
 
   - Adds support for i8 (64-bit integer) types: see new I8 type in
