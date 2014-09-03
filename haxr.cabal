@@ -41,7 +41,8 @@ Library
                  array,
                  utf8-string,
                  template-haskell,
-                 blaze-builder >= 0.2 && < 0.4
+                 blaze-builder >= 0.2 && < 0.4,
+                 network-uri
   Exposed-Modules:
         Network.XmlRpc.Client,
         Network.XmlRpc.Server,
