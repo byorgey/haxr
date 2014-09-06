@@ -1,3 +1,7 @@
+* 3000.10.3.1 (5 September 2014)
+
+  - Update .cabal file to deal with network-uri split.
+
 * 3000.10.3 (18 June 2014)
 
   - Parse unwrapped text as a String value in accordance with the
