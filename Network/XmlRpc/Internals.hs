@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Network.XmlRpc.Internals
@@ -50,8 +51,11 @@ import           Data.Time.LocalTime
 import           Numeric (showFFloat)
 import           Prelude hiding (showString, catch)
 import           System.IO.Unsafe (unsafePerformIO)
-import           System.Locale
 import           System.Time (CalendarTime(..))
+
+#if ! MIN_VERSION_time(1,5,0)
+import           System.Locale (defaultTimeLocale)
+#endif
 
 import qualified Data.ByteString.Char8 as BS (ByteString, pack, unpack)
 import qualified Data.ByteString.Lazy.Char8 as BSL (ByteString, pack)
