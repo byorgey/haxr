@@ -3,7 +3,7 @@
 -- Module      :  Network.XmlRpc.Server
 -- Copyright   :  (c) Bjorn Bringert 2003
 -- License     :  BSD-style
--- 
+--
 -- Maintainer  :  bjorn@bringert.net
 -- Stability   :  experimental
 -- Portability :  non-portable (requires extensions and non-portable libraries)
@@ -13,7 +13,7 @@
 --
 -- A simple CGI-based XML-RPC server application:
 --
--- > import Network.XmlRpc.Server 
+-- > import Network.XmlRpc.Server
 -- >
 -- > add :: Int -> Int -> IO Int
 -- > add x y = return (x + y)
@@ -21,23 +21,23 @@
 -- > main = cgiXmlRpcServer [("examples.add", fun add)]
 -----------------------------------------------------------------------------
 
-module Network.XmlRpc.Server 
+module Network.XmlRpc.Server
     (
      XmlRpcMethod, ServerResult,
      fun,
      handleCall, methods, cgiXmlRpcServer,
     ) where
 
-import Network.XmlRpc.Internals
+import           Network.XmlRpc.Internals
 
-import Data.ByteString.Lazy.Char8 (ByteString)
+import qualified Codec.Binary.UTF8.String   as U
+import           Control.Exception
+import           Control.Monad.Except
+import           Data.ByteString.Lazy.Char8 (ByteString)
 import qualified Data.ByteString.Lazy.Char8 as B
-import Data.Maybe
-import Control.Monad.Error
-import Control.Exception
-import qualified Codec.Binary.UTF8.String as U
-import System.IO
+import           System.IO
 
+serverName :: String
 serverName = "Haskell XmlRpcServer/0.1"
 
 --
@@ -62,8 +62,8 @@ handleIO io = lift (try io) >>= either (fail . showException) return
 -- Converting Haskell functions to XML-RPC methods
 --
 
--- | Turns any function 
---   @(XmlRpcType t1, ..., XmlRpcType tn, XmlRpcType r) => 
+-- | Turns any function
+--   @(XmlRpcType t1, ..., XmlRpcType tn, XmlRpcType r) =>
 --   t1 -> ... -> tn -> IO r@
 --   into an 'XmlRpcMethod'
 fun :: XmlRpcFun a => a -> XmlRpcMethod
@@ -109,7 +109,7 @@ handleCall f str = do resp <- errorToResponse (parseCall str >>= f)
 -- | An XmlRpcMethod that looks up the method name in a table
 --   and uses that method to handle the call.
 methods :: [(String,XmlRpcMethod)] -> MethodCall -> ServerResult
-methods t c@(MethodCall name _) = 
+methods t c@(MethodCall name _) =
     do
     (method,_) <- maybeToM ("Unknown method: " ++ name) (lookup name t)
     method c
@@ -126,8 +126,8 @@ server t = handleCall (methods (addIntrospection t))
 --
 
 addIntrospection :: [(String,XmlRpcMethod)] -> [(String,XmlRpcMethod)]
-addIntrospection t = t' 
-	where t' = ("system.listMethods", fun (listMethods t')) : 
+addIntrospection t = t'
+	where t' = ("system.listMethods", fun (listMethods t')) :
 		   ("system.methodSignature", fun (methodSignature t')) :
 		   ("system.methodHelp", fun (methodHelp t')) : t
 
@@ -135,7 +135,7 @@ listMethods :: [(String,XmlRpcMethod)] -> IO [String]
 listMethods t = return (fst (unzip t))
 
 methodSignature :: [(String,XmlRpcMethod)] -> String -> IO [[String]]
-methodSignature t name = 
+methodSignature t name =
     do
     (_,(as,r)) <- maybeToM ("Unknown method: " ++ name) (lookup name t)
     return [map show (r:as)]
@@ -148,7 +148,7 @@ methodHelp t name =
 
 -- FIXME: implement
 help :: XmlRpcMethod -> String
-help m = ""
+help _ = ""
 
 
 --
@@ -160,7 +160,7 @@ help m = ""
 --   followed by the response to standard output. Supports
 --   introspection.
 cgiXmlRpcServer :: [(String,XmlRpcMethod)] -> IO ()
-cgiXmlRpcServer ms = 
+cgiXmlRpcServer ms =
     do
     hSetBinaryMode stdin True
     hSetBinaryMode stdout True

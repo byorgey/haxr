@@ -39,7 +39,7 @@ Err, maybeToM, handleError, ioErrorToErr
 
 import           Control.Exception
 import           Control.Monad
-import           Control.Monad.Error
+import           Control.Monad.Except
 import           Data.Char
 import           Data.List
 import           Data.Maybe
@@ -49,7 +49,7 @@ import           Data.Time.Calendar.WeekDate (toWeekDate)
 import           Data.Time.Format
 import           Data.Time.LocalTime
 import           Numeric (showFFloat)
-import           Prelude hiding (showString, catch)
+import           Prelude hiding (showString)
 import           System.IO.Unsafe (unsafePerformIO)
 import           System.Time (CalendarTime(..))
 
@@ -105,7 +105,7 @@ xmlRpcDateFormat = "%Y%m%dT%H:%M:%S"
 -- Error monad stuff
 --
 
-type Err m a = ErrorT String m a
+type Err m a = ExceptT String m a
 
 -- | Evaluate the argument and catch error call exceptions
 errorToErr :: (Show e, MonadError e m) => a -> Err m a
@@ -120,7 +120,7 @@ ioErrorToErr x = (liftIO x >>= return) `catchError` \e -> throwError (show e)
 -- | Handle errors from the error monad.
 handleError :: Monad m => (String -> m a) -> Err m a -> m a
 handleError h m = do
-		  Right x <- runErrorT (catchError m (lift . h))
+		  Right x <- runExceptT (catchError m (lift . h))
 		  return x
 
 errorRead :: (Monad m, Read a) =>
