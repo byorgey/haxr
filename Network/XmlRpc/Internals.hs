@@ -49,7 +49,7 @@ import           Data.Time.Calendar.WeekDate (toWeekDate)
 import           Data.Time.Format
 import           Data.Time.LocalTime
 import           Numeric (showFFloat)
-import           Prelude hiding (showString)
+import           Prelude hiding (showString, catch)
 import           System.IO.Unsafe (unsafePerformIO)
 import           System.Time (CalendarTime(..))
 
