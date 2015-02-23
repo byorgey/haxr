@@ -34,6 +34,7 @@ flag network-uri
 Library
   Build-depends: base < 5,
                  mtl,
+                 mtl-compat,
                  network < 2.7,
                  HaXml >= 1.22 && < 1.26,
                  HTTP >= 4000,
