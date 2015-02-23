@@ -1,3 +1,7 @@
+* 3000.10.4.2 (23 February 2015)
+
+  - add mtl-compat dependency
+
 * 3000.10.4.1 (22 February 2015)
 
   - Fix build on GHC 7.4
