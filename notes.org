@@ -25,3 +25,14 @@
 	  
       
     + showXml'
+* Upgrading to support HTTPS
+
+  Need to edit Network.XmlRpc.Client.
+  See http-client and http-client-tls packages.
+  See http://hackage.haskell.org/package/http-types for common types.
+
+  OR maybe http://hackage.haskell.org/package/http-streams will be
+  better. Looks simple and like it will support just what I need.
+
+  See https://github.com/byorgey/BlogLiterately/issues/16
+  and https://github.com/byorgey/haxr/issues/4
