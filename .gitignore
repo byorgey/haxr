@@ -1,6 +1,8 @@
 dist
 cabal-dev
 *.o
+*.dyn_hi
+*.dyn_o
 *.hi
 *.chi
 *.chs.h
@@ -13,3 +15,4 @@ TAGS
 .diagrams-cache
 .cabal-sandbox
 cabal.sandbox.config
+examples/wp-test

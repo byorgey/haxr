@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Network.XmlRpc.Client
@@ -35,22 +37,28 @@ module Network.XmlRpc.Client
      Remote
     ) where
 
-import qualified Network.XmlRpc.Base64      as Base64
 import           Network.XmlRpc.Internals
 
-import           Control.Exception          (handleJust)
-import           Data.Char
+import           Data.Functor               ((<$>))
 import           Data.Maybe
-import           Data.Word                  (Word8)
-import           Network.Socket             (withSocketsDo)
 import           Network.URI
+import           Text.Read                  (readMaybe)
 
-import           Network.HTTP
-import           Network.Stream
+import           Network.Http.Client        (Method (..), Request,
+                                             baselineContextSSL, buildRequest,
+                                             closeConnection, getStatusCode,
+                                             getStatusMessage, http,
+                                             inputStreamBody, openConnectionSSL,
+                                             receiveResponse, sendRequest,
+                                             setAuthorizationBasic,
+                                             setContentType, setHeader)
+import           OpenSSL
+import qualified System.IO.Streams          as Streams
 
 import qualified Data.ByteString.Char8      as BS
-import qualified Data.ByteString.Lazy.Char8 as BSL (ByteString, toChunks)
-import qualified Data.ByteString.UTF8       as U
+import qualified Data.ByteString.Lazy.Char8 as BSL (ByteString, fromChunks,
+                                                    unpack)
+import qualified Data.ByteString.Lazy.UTF8  as U
 
 -- | Gets the return value from a method response.
 --   Throws an exception if the response was a fault.
@@ -58,18 +66,16 @@ handleResponse :: Monad m => MethodResponse -> m Value
 handleResponse (Return v) = return v
 handleResponse (Fault code str) = fail ("Error " ++ show code ++ ": " ++ str)
 
+type HeadersAList = [(BS.ByteString, BS.ByteString)]
+
 -- | Sends a method call to a server and returns the response.
 --   Throws an exception if the response was an error.
-doCall :: String -> [Header] -> MethodCall -> Err IO MethodResponse
+doCall :: String -> HeadersAList -> MethodCall -> Err IO MethodResponse
 doCall url headers mc =
     do
     let req = renderCall mc
-    --FIXME: remove
-    --putStrLn req
     resp <- ioErrorToErr $ post url headers req
-    --FIXME: remove
-    --putStrLn resp
-    parseResponse resp
+    parseResponse (BSL.unpack resp)
 
 -- | Low-level method calling function. Use this function if
 --   you need to do custom conversions between XML-RPC types and
@@ -88,7 +94,7 @@ call url method args = doCall url [] (MethodCall method args) >>= handleResponse
 --   Throws an exception if the response was a fault.
 callWithHeaders :: String -- ^ URL for the XML-RPC server.
                 -> String -- ^ Method name.
-                -> [Header] -- ^ Extra headers to add to HTTP request.
+                -> HeadersAList -- ^ Extra headers to add to HTTP request.
                 -> [Value] -- ^ The arguments.
                 -> Err IO Value -- ^ The result
 callWithHeaders url method headers args =
@@ -111,7 +117,7 @@ remoteWithHeaders :: Remote a =>
                      String   -- ^ Server URL. May contain username and password on
                               --   the format username:password\@ before the hostname.
                   -> String   -- ^ Remote method name.
-                  -> [Header] -- ^ Extra headers to add to HTTP request.
+                  -> HeadersAList -- ^ Extra headers to add to HTTP request.
                   -> a        -- ^ Any function
                               -- @(XmlRpcType t1, ..., XmlRpcType tn, XmlRpcType r) =>
                               -- t1 -> ... -> tn -> IO r@
@@ -137,18 +143,13 @@ instance (XmlRpcType a, Remote b) => Remote (a -> b) where
 -- HTTP functions
 --
 
-userAgent :: String
+userAgent :: BS.ByteString
 userAgent = "Haskell XmlRpcClient/0.1"
-
--- | Handle connection errors.
-handleE :: Monad m => (ConnError -> m a) -> Either ConnError a -> m a
-handleE h (Left e) = h e
-handleE _ (Right v) = return v
 
 -- | Post some content to a uri, return the content of the response
 --   or an error.
 -- FIXME: should we really use fail?
-post :: String -> [Header] -> BSL.ByteString -> IO String
+post :: String -> HeadersAList -> BSL.ByteString -> IO U.ByteString
 post url headers content = do
     uri <- maybeFail ("Bad URI: '" ++ url ++ "'") (parseURI url)
     let a = uriAuthority uri
@@ -159,45 +160,55 @@ post url headers content = do
 -- | Post some content to a uri, return the content of the response
 --   or an error.
 -- FIXME: should we really use fail?
-post_ :: URI -> URIAuth -> [Header] -> BSL.ByteString -> IO String
-post_ uri auth headers content =
-    do
-    eresp <- simpleHTTP (request uri auth headers (BS.concat . BSL.toChunks $ content))
-    resp <- handleE (fail . show) eresp
-    case rspCode resp of
-                      (2,0,0) -> return (U.toString (rspBody resp))
-                      _ -> fail (httpError resp)
-    where
-    showRspCode (a,b,c) = map intToDigit [a,b,c]
-    httpError resp = showRspCode (rspCode resp) ++ " " ++ rspReason resp
+post_ :: URI -> URIAuth -> HeadersAList -> BSL.ByteString -> IO U.ByteString
+post_ uri auth headers content = withOpenSSL $ do
+    ctx <- baselineContextSSL
+    let hostname = BS.pack (uriRegName auth)
+        port     = fromMaybe 443 (readMaybe $ uriPort auth)
+
+    c <- openConnectionSSL ctx hostname port
+
+    req  <- request uri auth headers
+    body <- inputStreamBody <$> Streams.fromLazyByteString content
+
+    _ <- sendRequest c req body
+
+    s <- receiveResponse c $ \resp i -> do
+        case getStatusCode resp of
+          200 -> readLazyByteString i
+          _   -> fail (show (getStatusCode resp) ++ " " ++ BS.unpack (getStatusMessage resp))
+
+    closeConnection c
+
+    return s
+
+readLazyByteString :: Streams.InputStream BS.ByteString -> IO U.ByteString
+readLazyByteString i = BSL.fromChunks <$> go
+  where
+    go :: IO [BS.ByteString]
+    go = do
+      res <- Streams.read i
+      case res of
+        Nothing -> return []
+        Just bs -> (bs:) <$> go
 
 -- | Create an XML-RPC compliant HTTP request.
-request :: URI -> URIAuth -> [Header] -> BS.ByteString -> Request BS.ByteString
-request uri auth usrHeaders content = Request{ rqURI = uri,
-                                               rqMethod = POST,
-                                               rqHeaders = headers,
-                                               rqBody = content }
-    where
-    -- the HTTP module adds a Host header based on the URI
-    headers = [Header HdrUserAgent userAgent,
-               Header HdrContentType "text/xml",
-               Header HdrContentLength (show (BS.length content))
-              ] ++ maybeToList (uncurry authHdr . parseUserInfo $ auth)
-                ++ usrHeaders
-    parseUserInfo info = let (u,pw) = break (==':') $ uriUserInfo info
-                         in ( if null u then Nothing else Just u
-                            , if null pw then Nothing else Just (tail pw))
+request :: URI -> URIAuth -> [(BS.ByteString, BS.ByteString)] -> IO Request
+request uri auth usrHeaders = buildRequest $ do
+    http POST (BS.pack $ show uri)
+    setContentType "text/xml"
+    case parseUserInfo auth of
+      (Just user, Just pass) -> setAuthorizationBasic (BS.pack user) (BS.pack pass)
+      _                      -> return ()
 
--- | Creates an Authorization header using the Basic scheme,
---   see RFC 2617 section 2.
-authHdr :: Maybe String -- ^ User name, if any
-        -> Maybe String -- ^ Password, if any
-        -> Maybe Header -- ^ If user name or password was given, returns
-                        --   an Authorization header, otherwise 'Nothing'
-authHdr Nothing Nothing = Nothing
-authHdr u p = Just (Header HdrAuthorization ("Basic " ++ base64encode user_pass))
-        where user_pass    = fromMaybe "" u ++ ":" ++ fromMaybe "" p
-              base64encode = BS.unpack . Base64.encode . BS.pack
+    mapM_ (uncurry setHeader) usrHeaders
+
+    setHeader "User-Agent" userAgent
+
+    where
+      parseUserInfo info = let (u,pw) = break (==':') $ uriUserInfo info
+                           in ( if null u then Nothing else Just u
+                              , if null pw then Nothing else Just (tail pw))
 
 --
 -- Utility functions
