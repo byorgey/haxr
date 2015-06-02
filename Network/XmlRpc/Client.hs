@@ -42,7 +42,7 @@ import           Network.XmlRpc.Internals
 import           Data.Functor               ((<$>))
 import           Data.Maybe
 import           Network.URI
-import           Text.Read                  (readMaybe)
+import           Text.Read.Compat           (readMaybe)
 
 import           Network.Http.Client        (Method (..), Request,
                                              baselineContextSSL, buildRequest,
