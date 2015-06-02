@@ -1,3 +1,10 @@
+* 3000.11 (1 June 2015)
+
+  - Switch from the HTTP package to http-streams, and add support for
+    HTTPS.  The types of a few of the internal methods may have
+    changed, but for the most part code depending on haxr should
+    continue to work unchanged.
+
 * 3000.10.4.2 (23 February 2015)
 
   - add mtl-compat dependency
