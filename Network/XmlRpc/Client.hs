@@ -47,7 +47,7 @@ import           Text.Read.Compat           (readMaybe)
 import           Network.Http.Client        (Method (..), Request,
                                              baselineContextSSL, buildRequest,
                                              closeConnection, getStatusCode,
-                                             getStatusMessage, http,
+                                             getStatusMessage, http, openConnection,
                                              inputStreamBody, openConnectionSSL,
                                              receiveResponse, sendRequest,
                                              setAuthorizationBasic,
@@ -162,11 +162,16 @@ post url headers content = do
 -- FIXME: should we really use fail?
 post_ :: URI -> URIAuth -> HeadersAList -> BSL.ByteString -> IO U.ByteString
 post_ uri auth headers content = withOpenSSL $ do
-    ctx <- baselineContextSSL
     let hostname = BS.pack (uriRegName auth)
-        port     = fromMaybe 443 (readMaybe $ uriPort auth)
+        port     = fromMaybe 443 (readMaybe $ tail $ uriPort auth)
 
-    c <- openConnectionSSL ctx hostname port
+    c <- case init $ uriScheme uri of
+        "http"  ->
+            openConnection hostname port
+        "https" -> do
+            ctx <- baselineContextSSL
+            openConnectionSSL ctx hostname port
+        x -> fail ("Unknown scheme: '" ++ x ++ "'!")
 
     req  <- request uri auth headers
     body <- inputStreamBody <$> Streams.fromLazyByteString content
@@ -195,7 +200,7 @@ readLazyByteString i = BSL.fromChunks <$> go
 -- | Create an XML-RPC compliant HTTP request.
 request :: URI -> URIAuth -> [(BS.ByteString, BS.ByteString)] -> IO Request
 request uri auth usrHeaders = buildRequest $ do
-    http POST (BS.pack $ show uri)
+    http POST (BS.pack $ uriPath uri)
     setContentType "text/xml"
     case parseUserInfo auth of
       (Just user, Just pass) -> setAuthorizationBasic (BS.pack user) (BS.pack pass)
