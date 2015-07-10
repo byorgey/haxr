@@ -1,3 +1,11 @@
+* 3000.11.1 (10 July 2015)
+
+  - Support both HTTP and HTTPS automatically, depending on URL.
+  - Bug fixes:
+    - read port properly
+    - set request path properly
+    - set content-length header
+
 * 3000.11 (1 June 2015)
 
   - Switch from the HTTP package to http-streams, and add support for
