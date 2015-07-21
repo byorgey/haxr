@@ -1,3 +1,7 @@
+* 3000.11.1.1 (21 July 2015)
+
+  - Bug fix: don't crash with empty URI port
+
 * 3000.11.1 (10 July 2015)
 
   - Support both HTTP and HTTPS automatically, depending on URL.
