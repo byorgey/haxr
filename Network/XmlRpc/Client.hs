@@ -39,6 +39,7 @@ module Network.XmlRpc.Client
 
 import           Network.XmlRpc.Internals
 
+import           Control.Monad.IO.Class
 import           Data.Functor               ((<$>))
 import           Data.Maybe
 import           Data.Int
@@ -132,8 +133,8 @@ class Remote a where
             -> ([Value] -> Err IO Value)
             -> a
 
-instance XmlRpcType a => Remote (IO a) where
-    remote_ h f = handleError (fail . h) $ f [] >>= fromValue
+instance (MonadIO m, XmlRpcType a) => Remote (m a) where
+    remote_ h f = liftIO . handleError (fail . h) $ f [] >>= fromValue
 
 instance (XmlRpcType a, Remote b) => Remote (a -> b) where
     remote_ h f x = remote_ h (\xs -> f (toValue x:xs))
