@@ -164,7 +164,7 @@ post url headers content = do
 post_ :: URI -> URIAuth -> HeadersAList -> BSL.ByteString -> IO U.ByteString
 post_ uri auth headers content = withOpenSSL $ do
     let hostname = BS.pack (uriRegName auth)
-        port     = fromMaybe 443 (readMaybe $ tail $ uriPort auth)
+        port     = fromMaybe 443 (readMaybe $ tailSafe $ uriPort auth)
 
     c <- case init $ uriScheme uri of
         "http"  ->
@@ -224,3 +224,7 @@ request uri auth usrHeaders len = buildRequest $ do
 
 maybeFail :: Monad m => String -> Maybe a -> m a
 maybeFail msg = maybe (fail msg) return
+
+tailSafe :: [a] -> [a]
+tailSafe [] = []
+tailSafe x  = tail x
