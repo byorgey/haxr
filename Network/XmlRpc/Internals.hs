@@ -393,7 +393,7 @@ showBool b = if b then "1" else "0"
 
 -- escapes & and <
 showString :: String -> String
-showString s = replace "<" "&lt;" (replace "&" "&amp;" s)
+showString s = replace ">" "&gt;" $ replace "<" "&lt;" (replace "&" "&amp;" s)
 
 -- | Shows a double in signed decimal point notation.
 showDouble :: Double -> String

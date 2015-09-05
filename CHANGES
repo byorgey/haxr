@@ -1,3 +1,9 @@
+* 3000.12.1.1
+
+  - `>` is now escaped as `&gt;` when sending requests. Without this
+    some XML-RPC servers will break when receiving an embedded CDATA section
+    (i.e. Atlassian Confluence).
+
 * 3000.11.1.1 (21 July 2015)
 
   - Bug fix: don't crash with empty URI port
