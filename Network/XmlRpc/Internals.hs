@@ -391,9 +391,9 @@ showInt = show
 showBool :: Bool -> String
 showBool b = if b then "1" else "0"
 
--- escapes & and <
+-- escapes &, <, and <
 showString :: String -> String
-showString s = replace ">" "&gt;" $ replace "<" "&lt;" (replace "&" "&amp;" s)
+showString = replace ">" "&gt;" . replace "<" "&lt;" . replace "&" "&amp;"
 
 -- | Shows a double in signed decimal point notation.
 showDouble :: Double -> String
