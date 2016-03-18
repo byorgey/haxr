@@ -39,7 +39,7 @@ asXmlRpcStruct name =
     mkInstance dec
 
 mkInstance :: Dec -> Q [Dec]
-#if MIN_VERSION_template-haskell(2,11,0)
+#if MIN_VERSION_template_haskell(2,11,0)
 mkInstance  (DataD _ n _ [RecC c fs] _) =
 #else
 mkInstance  (DataD _ n _ _ [RecC c fs] _) =
