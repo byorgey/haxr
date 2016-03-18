@@ -12,7 +12,9 @@
 --
 ------------------------------------------------------------------------------
 
+{-# LANGUAGE CPP             #-}
 {-# LANGUAGE TemplateHaskell #-}
+
 module Network.XmlRpc.THDeriveXmlRpcType (asXmlRpcStruct) where
 
 import Control.Monad (replicateM, liftM)
@@ -37,7 +39,11 @@ asXmlRpcStruct name =
     mkInstance dec
 
 mkInstance :: Dec -> Q [Dec]
-mkInstance  (DataD _ n _ [RecC c fs] _) = 
+#if MIN_VERSION_template-haskell(2,11,0)
+mkInstance  (DataD _ n _ [RecC c fs] _) =
+#else
+mkInstance  (DataD _ n _ _ [RecC c fs] _) =
+#endif
     do
     let ns = (map (\ (f,_,t) -> (unqual f, isMaybe t)) fs)
     tv <- mkToValue ns 
