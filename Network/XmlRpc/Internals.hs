@@ -71,10 +71,10 @@ import           Text.XML.HaXml.XmlContent
 -- | Replaces all occurances of a sublist in a list with another list.
 --   If the list to replace is the empty list, does nothing.
 replace :: Eq a =>
-	[a] -- ^ The sublist to replace when found
-	-> [a] -- ^ The list to replace it with
-	-> [a] -- ^ The list to replace in
-	-> [a] -- ^ The result
+        [a] -- ^ The sublist to replace when found
+        -> [a] -- ^ The list to replace it with
+        -> [a] -- ^ The list to replace in
+        -> [a] -- ^ The result
 replace [] _ xs = xs
 replace _ _ [] = []
 replace ys zs xs@(x:xs')
@@ -83,17 +83,17 @@ replace ys zs xs@(x:xs')
 
 -- | Convert a 'Maybe' value to a value in any monad
 maybeToM :: Monad m =>
-		String -- ^ Error message to fail with for 'Nothing'
-	     -> Maybe a -- ^ The 'Maybe' value.
-	     -> m a -- ^ The resulting value in the monad.
+                String -- ^ Error message to fail with for 'Nothing'
+             -> Maybe a -- ^ The 'Maybe' value.
+             -> m a -- ^ The resulting value in the monad.
 maybeToM err Nothing = fail err
 maybeToM _ (Just x) = return x
 
 -- | Convert a 'Maybe' value to a value in any monad
 eitherToM :: Monad m
           => String -- ^ Error message to fail with for 'Nothing'
-	  -> Either String a -- ^ The 'Maybe' value.
-	  -> m a -- ^ The resulting value in the monad.
+          -> Either String a -- ^ The 'Maybe' value.
+          -> m a -- ^ The resulting value in the monad.
 eitherToM err (Left s)  = fail (err ++ ": " ++ s)
 eitherToM   _ (Right x) = return x
 
@@ -120,17 +120,17 @@ ioErrorToErr x = (liftIO x >>= return) `catchError` \e -> throwError (show e)
 -- | Handle errors from the error monad.
 handleError :: Monad m => (String -> m a) -> Err m a -> m a
 handleError h m = do
-		  Right x <- runExceptT (catchError m (lift . h))
-		  return x
+                  Right x <- runExceptT (catchError m (lift . h))
+                  return x
 
 errorRead :: (Monad m, Read a) =>
-	     ReadS a -- ^ Parser
-	  -> String -- ^ Error message
-	  -> String -- ^ String to parse
-	  -> Err m a
+             ReadS a -- ^ Parser
+          -> String -- ^ Error message
+          -> String -- ^ String to parse
+          -> Err m a
 errorRead r err s = case [x | (x,t) <- r s, ("","") <- lex t] of
-		          [x] -> return x
-		          _   -> fail (err ++ ": '" ++ s ++ "'")
+                          [x] -> return x
+                          _   -> fail (err ++ ": '" ++ s ++ "'")
 
 --
 -- Types for methods calls and responses
@@ -139,12 +139,12 @@ errorRead r err s = case [x | (x,t) <- r s, ("","") <- lex t] of
 -- | An XML-RPC method call. Consists of a method name and a list of
 --   parameters.
 data MethodCall = MethodCall String [Value]
-		  deriving (Eq, Show) -- for debugging
+                  deriving (Eq, Show) -- for debugging
 
 -- | An XML-RPC response.
 data MethodResponse = Return Value -- ^ A method response returning a value
-		    | Fault Int String -- ^ A fault response
-		      deriving (Eq, Show) -- for debugging
+                    | Fault Int String -- ^ A fault response
+                      deriving (Eq, Show) -- for debugging
 
 -- | An XML-RPC value.
 data Value =
@@ -161,15 +161,15 @@ data Value =
 
 -- | An XML-RPC value. Use for error messages and introspection.
 data Type =
-	  TInt
-	  | TBool
-	  | TString
-	  | TDouble
-	  | TDateTime
-	  | TBase64
-	  | TStruct
-	  | TArray
-	  | TUnknown
+          TInt
+          | TBool
+          | TString
+          | TDouble
+          | TDateTime
+          | TBase64
+          | TStruct
+          | TArray
+          | TUnknown
       deriving (Eq)
 
 instance Show Type where
@@ -185,14 +185,14 @@ instance Show Type where
 
 instance Read Type where
     readsPrec _ s = case break isSpace (dropWhile isSpace s) of
-		    ("int",r) -> [(TInt,r)]
-		    ("bool",r) -> [(TBool,r)]
-		    ("string",r) -> [(TString,r)]
-		    ("double",r) -> [(TDouble,r)]
-		    ("dateTime.iso8601",r) -> [(TDateTime,r)]
-		    ("base64",r) -> [(TBase64,r)]
-		    ("struct",r) -> [(TStruct,r)]
-		    ("array",r) -> [(TArray,r)]
+                    ("int",r) -> [(TInt,r)]
+                    ("bool",r) -> [(TBool,r)]
+                    ("string",r) -> [(TString,r)]
+                    ("double",r) -> [(TDouble,r)]
+                    ("dateTime.iso8601",r) -> [(TDateTime,r)]
+                    ("base64",r) -> [(TBase64,r)]
+                    ("struct",r) -> [(TStruct,r)]
+                    ("array",r) -> [(TArray,r)]
 
 -- | Gets the value of a struct member
 structGetValue :: Monad m => String -> Value -> Err m Value
@@ -203,7 +203,7 @@ structGetValue _ _ = fail "Value is not a struct"
 -- | Builds a fault struct
 faultStruct :: Int -> String -> Value
 faultStruct code str = ValueStruct [("faultCode",ValueInt code),
-				    ("faultString",ValueString str)]
+                                    ("faultString",ValueString str)]
 
 -- XML-RPC specification:
 -- "The body of the response is a single XML structure, a
@@ -230,16 +230,16 @@ class XmlRpcType a where
 typeError :: (XmlRpcType a, Monad m) => Value -> Err m a
 typeError v = withType $ \t ->
        fail ("Wanted: "
-	     ++ show (getType t)
-	     ++ "', got: '"
-	     ++ showXml False (toXRValue v) ++ "'") `asTypeOf` return t
+             ++ show (getType t)
+             ++ "', got: '"
+             ++ showXml False (toXRValue v) ++ "'") `asTypeOf` return t
 
 -- a type hack for use in 'typeError'
 withType :: (a -> Err m a) -> Err m a
 withType f = f undefined
 
 simpleFromValue :: (Monad m, XmlRpcType a) => (Value -> Maybe a)
-		-> Value -> Err m a
+                -> Value -> Err m a
 simpleFromValue f v =
     maybe (typeError v) return (f v)
 
@@ -256,23 +256,23 @@ instance XmlRpcType Value where
 instance XmlRpcType Int where
     toValue = ValueInt
     fromValue = simpleFromValue f
-	where f (ValueInt x) = Just x
-	      f _ = Nothing
+        where f (ValueInt x) = Just x
+              f _ = Nothing
     getType _ = TInt
 
 instance XmlRpcType Bool where
     toValue = ValueBool
     fromValue = simpleFromValue f
-	where f (ValueBool x) = Just x
-	      f _ = Nothing
+        where f (ValueBool x) = Just x
+              f _ = Nothing
     getType _ = TBool
 
 instance XmlRpcType String where
     toValue = ValueString
     fromValue = simpleFromValue f
-	where f (ValueString x) = Just x
+        where f (ValueString x) = Just x
               f (ValueUnwrapped x) = Just x
-	      f _ = Nothing
+              f _ = Nothing
     getType _ = TString
 
 instance XmlRpcType BS.ByteString where
@@ -285,15 +285,15 @@ instance XmlRpcType BS.ByteString where
 instance XmlRpcType Double where
     toValue = ValueDouble
     fromValue = simpleFromValue f
-	where f (ValueDouble x) = Just x
-	      f _ = Nothing
+        where f (ValueDouble x) = Just x
+              f _ = Nothing
     getType _ = TDouble
 
 instance XmlRpcType LocalTime where
     toValue = ValueDateTime
     fromValue = simpleFromValue f
-	where f (ValueDateTime x) = Just x
-	      f _ = Nothing
+        where f (ValueDateTime x) = Just x
+              f _ = Nothing
     getType _ = TDateTime
 
 instance XmlRpcType CalendarTime where
@@ -305,8 +305,8 @@ instance XmlRpcType CalendarTime where
 instance XmlRpcType a => XmlRpcType [a] where
     toValue = ValueArray . map toValue
     fromValue v = case v of
-			 ValueArray xs -> mapM fromValue xs
-			 _ -> typeError v
+                         ValueArray xs -> mapM fromValue xs
+                         _ -> typeError v
     getType _ = TArray
 
 -- FIXME: struct elements may have different types
@@ -314,8 +314,8 @@ instance XmlRpcType a => XmlRpcType [(String,a)] where
     toValue xs = ValueStruct [(n, toValue v) | (n,v) <- xs]
 
     fromValue v = case v of
-		  ValueStruct xs -> mapM (\ (n,v') -> liftM ((,) n) (fromValue v')) xs
-		  _ -> typeError v
+                  ValueStruct xs -> mapM (\ (n,v') -> liftM ((,) n) (fromValue v')) xs
+                  _ -> typeError v
     getType _ = TStruct
 
 -- Tuple instances may be used for heterogenous array types.
@@ -353,20 +353,20 @@ instance (XmlRpcType a, XmlRpcType b) => XmlRpcType (a,b) where
 
 -- | Get a field value from a (possibly heterogeneous) struct.
 getField :: (Monad m, XmlRpcType a) =>
-	    String           -- ^ Field name
-	 -> [(String,Value)] -- ^ Struct
-	 -> Err m a
+            String           -- ^ Field name
+         -> [(String,Value)] -- ^ Struct
+         -> Err m a
 getField x xs = maybeToM ("struct member " ++ show x ++ " not found")
-		(lookup x xs) >>= fromValue
+                (lookup x xs) >>= fromValue
 
 -- | Get a field value from a (possibly heterogeneous) struct.
 getFieldMaybe :: (Monad m, XmlRpcType a) =>
-	    String           -- ^ Field name
-	 -> [(String,Value)] -- ^ Struct
-	 -> Err m (Maybe a)
+            String           -- ^ Field name
+         -> [(String,Value)] -- ^ Struct
+         -> Err m (Maybe a)
 getFieldMaybe x xs = case lookup x xs of
-				      Nothing -> return Nothing
-				      Just v -> liftM Just (fromValue v)
+                                      Nothing -> return Nothing
+                                      Just v -> liftM Just (fromValue v)
 
 --
 -- Converting to XR types
@@ -470,10 +470,10 @@ readInt s = errorRead reads "Error parsing integer" s
 readBool :: Monad m => String -> Err m Bool
 readBool s = errorRead readsBool "Error parsing boolean" s
     where readsBool "true" = [(True,"")]
-	  readsBool "false" = [(False,"")]
-	  readsBool "1" = [(True,"")]
-	  readsBool "0" = [(False,"")]
-	  readsBool _ = []
+          readsBool "false" = [(False,"")]
+          readsBool "1" = [(True,"")]
+          readsBool "0" = [(False,"")]
+          readsBool _ = []
 
 -- | From the XML-RPC specification:
 --
@@ -485,7 +485,7 @@ readBool s = errorRead readsBool "Error parsing boolean" s
 -- seems unlikely to cause problems.
 readString :: Monad m => String -> Err m String
 readString = return . replace "&amp;" "&" . replace "&lt;" "<"
-	     . replace "&gt;" ">"
+             . replace "&gt;" ">"
 
 
 -- | From the XML-RPC specification:
@@ -521,19 +521,19 @@ localTimeToCalendarTime l =
         (_,_,wd) = toWeekDate (localDay l)
         (_,yd) = toOrdinalDate (localDay l)
      in CalendarTime {
-	              ctYear    = fromIntegral y,
-		      ctMonth   = toEnum (mo-1),
-		      ctDay     = d,
-		      ctHour    = h,
-		      ctMin     = mi,
-		      ctSec     = truncate s,
-		      ctPicosec = 0,
-		      ctWDay    = toEnum (wd `mod` 7),
-		      ctYDay    = yd,
-		      ctTZName  = "UTC",
-		      ctTZ      = 0,
-		      ctIsDST   = False
-		     }
+                      ctYear    = fromIntegral y,
+                      ctMonth   = toEnum (mo-1),
+                      ctDay     = d,
+                      ctHour    = h,
+                      ctMin     = mi,
+                      ctSec     = truncate s,
+                      ctPicosec = 0,
+                      ctWDay    = toEnum (wd `mod` 7),
+                      ctYDay    = yd,
+                      ctTZName  = "UTC",
+                      ctTZ      = 0,
+                      ctIsDST   = False
+                     }
 
 calendarTimeToLocalTime :: CalendarTime -> LocalTime
 calendarTimeToLocalTime ct =

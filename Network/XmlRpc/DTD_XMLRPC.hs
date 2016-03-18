@@ -1,27 +1,27 @@
 module Network.XmlRpc.DTD_XMLRPC where
 
-import Text.XML.HaXml.XmlContent
-import Text.XML.HaXml.OneOfN
-import Text.XML.HaXml.Types (QName(..))
+import           Text.XML.HaXml.OneOfN
+import           Text.XML.HaXml.Types      (QName (..))
+import           Text.XML.HaXml.XmlContent
 
 
 {-Type decls-}
 
-newtype I4 = I4 String 		deriving (Eq,Show)
-newtype I8 = I8 String 		deriving (Eq,Show)
-newtype AInt = AInt String 		deriving (Eq,Show)
-newtype Boolean = Boolean String 		deriving (Eq,Show)
-newtype AString = AString String 		deriving (Eq,Show)
-newtype ADouble = ADouble String 		deriving (Eq,Show)
-newtype DateTime_iso8601 = DateTime_iso8601 String 		deriving (Eq,Show)
-newtype Base64 = Base64 String 		deriving (Eq,Show)
-newtype Data = Data [Value] 		deriving (Eq,Show)
-newtype Array = Array Data 		deriving (Eq,Show)
-newtype Name = Name String 		deriving (Eq,Show)
+newtype I4 = I4 String          deriving (Eq,Show)
+newtype I8 = I8 String          deriving (Eq,Show)
+newtype AInt = AInt String              deriving (Eq,Show)
+newtype Boolean = Boolean String                deriving (Eq,Show)
+newtype AString = AString String                deriving (Eq,Show)
+newtype ADouble = ADouble String                deriving (Eq,Show)
+newtype DateTime_iso8601 = DateTime_iso8601 String              deriving (Eq,Show)
+newtype Base64 = Base64 String          deriving (Eq,Show)
+newtype Data = Data [Value]             deriving (Eq,Show)
+newtype Array = Array Data              deriving (Eq,Show)
+newtype Name = Name String              deriving (Eq,Show)
 data Member = Member Name Value
             deriving (Eq,Show)
-newtype Struct = Struct [Member] 		deriving (Eq,Show)
-newtype Value = Value [Value_] 		deriving (Eq,Show)
+newtype Struct = Struct [Member]                deriving (Eq,Show)
+newtype Value = Value [Value_]          deriving (Eq,Show)
 data Value_ = Value_Str String
             | Value_I4 I4
             | Value_I8 I8
@@ -34,12 +34,12 @@ data Value_ = Value_Str String
             | Value_Struct Struct
             | Value_Array Array
             deriving (Eq,Show)
-newtype Param = Param Value 		deriving (Eq,Show)
-newtype Params = Params [Param] 		deriving (Eq,Show)
-newtype MethodName = MethodName String 		deriving (Eq,Show)
+newtype Param = Param Value             deriving (Eq,Show)
+newtype Params = Params [Param]                 deriving (Eq,Show)
+newtype MethodName = MethodName String          deriving (Eq,Show)
 data MethodCall = MethodCall MethodName (Maybe Params)
                 deriving (Eq,Show)
-newtype Fault = Fault Value 		deriving (Eq,Show)
+newtype Fault = Fault Value             deriving (Eq,Show)
 data MethodResponse = MethodResponseParams Params
                     | MethodResponseFault Fault
                     deriving (Eq,Show)
@@ -277,7 +277,7 @@ instance XmlContent MethodResponse where
         [CElem (Elem (N "methodResponse") [] (toContents a) ) ()]
     toContents (MethodResponseFault a) =
         [CElem (Elem (N "methodResponse") [] (toContents a) ) ()]
-    parseContents = do 
+    parseContents = do
         { e@(Elem _ [] _) <- element ["methodResponse"]
         ; interior e $ oneOf
             [ return (MethodResponseParams) `apply` parseContents

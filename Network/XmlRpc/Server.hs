@@ -75,15 +75,15 @@ class XmlRpcFun a where
 
 instance XmlRpcType a => XmlRpcFun (IO a) where
     toFun x (MethodCall _ []) = do
-			      v <- handleIO x
-			      return (Return (toValue v))
+                              v <- handleIO x
+                              return (Return (toValue v))
     toFun _ _ = fail "Too many arguments"
     sig x = ([], getType (mType x))
 
 instance (XmlRpcType a, XmlRpcFun b) => XmlRpcFun (a -> b) where
     toFun f (MethodCall n (x:xs)) = do
-				  v <- fromValue x
-				  toFun (f v) (MethodCall n xs)
+                                  v <- fromValue x
+                                  toFun (f v) (MethodCall n xs)
     toFun _ _ = fail "Too few arguments"
     sig f = let (a,b) = funType f
                 (as, r) = sig b
@@ -104,7 +104,7 @@ errorToResponse = handleError (return . Fault 0)
 --   to generate a response and returns that response as a string
 handleCall :: (MethodCall -> ServerResult) -> String -> IO ByteString
 handleCall f str = do resp <- errorToResponse (parseCall str >>= f)
-		      return (renderResponse resp)
+                      return (renderResponse resp)
 
 -- | An XmlRpcMethod that looks up the method name in a table
 --   and uses that method to handle the call.
@@ -127,9 +127,9 @@ server t = handleCall (methods (addIntrospection t))
 
 addIntrospection :: [(String,XmlRpcMethod)] -> [(String,XmlRpcMethod)]
 addIntrospection t = t'
-	where t' = ("system.listMethods", fun (listMethods t')) :
-		   ("system.methodSignature", fun (methodSignature t')) :
-		   ("system.methodHelp", fun (methodHelp t')) : t
+        where t' = ("system.listMethods", fun (listMethods t')) :
+                   ("system.methodSignature", fun (methodSignature t')) :
+                   ("system.methodHelp", fun (methodHelp t')) : t
 
 listMethods :: [(String,XmlRpcMethod)] -> IO [String]
 listMethods t = return (fst (unzip t))
@@ -172,4 +172,4 @@ cgiXmlRpcServer ms =
     putStr ("Content-Length: " ++ show (B.length output) ++ crlf)
     putStr crlf
     B.putStr output
-	where crlf = "\r\n"
+        where crlf = "\r\n"
