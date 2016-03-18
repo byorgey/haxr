@@ -512,7 +512,7 @@ readDateTime dt =
     maybe
         (fail $ "Error parsing dateTime '" ++ dt ++ "'")
         return
-        (parseTimeM True defaultTimeLocale xmlRpcDateFormat dt)
+        (parseTime defaultTimeLocale xmlRpcDateFormat dt)
 
 localTimeToCalendarTime :: LocalTime -> CalendarTime
 localTimeToCalendarTime l =
