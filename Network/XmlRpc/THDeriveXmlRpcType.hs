@@ -40,9 +40,9 @@ asXmlRpcStruct name =
 
 mkInstance :: Dec -> Q [Dec]
 #if MIN_VERSION_template_haskell(2,11,0)
-mkInstance  (DataD _ n _ [RecC c fs] _) =
-#else
 mkInstance  (DataD _ n _ _ [RecC c fs] _) =
+#else
+mkInstance  (DataD _ n _ [RecC c fs] _) =
 #endif
     do
     let ns = (map (\ (f,_,t) -> (unqual f, isMaybe t)) fs)
