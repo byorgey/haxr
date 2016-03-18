@@ -34,8 +34,8 @@ asXmlRpcStruct name =
     do
     info <- reify name
     dec <- case info of
-		     TyConI d -> return d
-		     _ -> fail $ show name ++ " is not a type constructor"
+                     TyConI d -> return d
+                     _ -> fail $ show name ++ " is not a type constructor"
     mkInstance dec
 
 mkInstance :: Dec -> Q [Dec]
@@ -50,8 +50,8 @@ mkInstance  (DataD _ n _ [RecC c fs] _) =
     fv <- mkFromValue c ns
     gt <- mkGetType
     liftM (:[]) $ instanceD (cxt []) (appT (conT ''XmlRpcType)
-				    (conT n))
-	      (map return $ concat [tv, fv, gt])
+                                    (conT n))
+              (map return $ concat [tv, fv, gt])
 
 mkInstance _ = error "Can only derive XML-RPC type for simple record types"
 
@@ -69,8 +69,8 @@ mkToValue fs =
     do
     p <- newName "p"
     simpleFun 'toValue [varP p]
-		(appE (varE 'toValue)
-			  (appE [| concat |] $ listE $ map (fieldToTuple p) fs))
+                (appE (varE 'toValue)
+                          (appE [| concat |] $ listE $ map (fieldToTuple p) fs))
 
 
 simpleFun :: Name -> [PatQ] -> ExpQ -> Q [Dec]
@@ -78,10 +78,10 @@ simpleFun n ps b = sequence [funD n [clause ps (normalB b) []]]
 
 fieldToTuple :: Name -> (Name,Bool) -> ExpQ
 fieldToTuple p (n,False) = listE [tupE [stringE (show n),
-					 appE (varE 'toValue)
-					 (appE (varE n) (varE p))
-					]
-				 ]
+                                         appE (varE 'toValue)
+                                         (appE (varE n) (varE p))
+                                        ]
+                                 ]
 fieldToTuple p (n,True) =
     [| map (\v -> ($(stringE (show n)), toValue v)) $ maybeToList $(appE (varE n) (varE p)) |]
 
@@ -92,15 +92,15 @@ mkFromValue c fs =
     v <- newName "v"
     t <- newName "t"
     simpleFun 'fromValue [varP v] $
-	       doE $ [bindS (varP t) (appE (varE 'fromValue) (varE v))] ++
-		      zipWith (mkGetField t) (map varP names) fs ++
-		      [noBindS $ appE [| return |] $ appsE (conE c:map varE names)]
+               doE $ [bindS (varP t) (appE (varE 'fromValue) (varE v))] ++
+                      zipWith (mkGetField t) (map varP names) fs ++
+                      [noBindS $ appE [| return |] $ appsE (conE c:map varE names)]
 
 mkGetField t p (f,False) = bindS p (appsE [varE 'getField,
-					   stringE (show f), varE t])
+                                           stringE (show f), varE t])
 mkGetField t p (f,True) = bindS p (appsE [varE 'getFieldMaybe,
-					  stringE (show f), varE t])
+                                          stringE (show f), varE t])
 
 mkGetType :: Q [Dec]
 mkGetType = simpleFun 'getType [wildP]
-	     (conE 'TStruct)
+             (conE 'TStruct)
