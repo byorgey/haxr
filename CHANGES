@@ -1,3 +1,7 @@
+* 3000.11.1.5 (13 May 2016)
+
+  - bug fix in parsing username & password from URI
+
 * 3000.11.1.4 (18 March 2016)
 
   - build with template-haskell 2.11 / GHC 8.0.1
