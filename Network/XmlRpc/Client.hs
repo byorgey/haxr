@@ -150,6 +150,7 @@ userAgent = "Haskell XmlRpcClient/0.1"
 -- | Post some content to a uri, return the content of the response
 --   or an error.
 -- FIXME: should we really use fail?
+
 post :: String -> HeadersAList -> BSL.ByteString -> IO U.ByteString
 post url headers content = do
     uri <- maybeFail ("Bad URI: '" ++ url ++ "'") (parseURI url)
@@ -216,7 +217,7 @@ request uri auth usrHeaders len = buildRequest $ do
     where
       parseUserInfo info = let (u,pw) = break (==':') $ uriUserInfo info
                            in ( if null u then Nothing else Just u
-                              , if null pw then Nothing else Just (tail pw))
+                              , if null pw then Nothing else Just $ dropAtEnd $ tail pw )
 
 --
 -- Utility functions
@@ -224,3 +225,6 @@ request uri auth usrHeaders len = buildRequest $ do
 
 maybeFail :: Monad m => String -> Maybe a -> m a
 maybeFail msg = maybe (fail msg) return
+
+dropAtEnd :: String -> String
+dropAtEnd l = take (length l - 1) l
