@@ -165,14 +165,14 @@ post url headers content = do
 post_ :: URI -> URIAuth -> HeadersAList -> BSL.ByteString -> IO U.ByteString
 post_ uri auth headers content = withOpenSSL $ do
     let hostname = BS.pack (uriRegName auth)
-        port     = fromMaybe 443 (readMaybe $ drop 1 $ uriPort auth)
+        port base = fromMaybe base (readMaybe $ drop 1 $ uriPort auth)
 
     c <- case init $ uriScheme uri of
         "http"  ->
-            openConnection hostname port
+            openConnection hostname (port 80)
         "https" -> do
             ctx <- baselineContextSSL
-            openConnectionSSL ctx hostname port
+            openConnectionSSL ctx hostname (port 443)
         x -> fail ("Unknown scheme: '" ++ x ++ "'!")
 
     req  <- request uri auth headers (BSL.length content)
