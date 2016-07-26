@@ -57,6 +57,8 @@ import           System.Time (CalendarTime(..))
 import           System.Locale (defaultTimeLocale)
 #endif
 
+import           Data.Text (Text)
+import qualified Data.Text as T
 import qualified Data.ByteString.Char8 as BS (ByteString, pack, unpack)
 import qualified Data.ByteString.Lazy.Char8 as BSL (ByteString, pack)
 import qualified Network.XmlRpc.Base64 as Base64
@@ -273,6 +275,11 @@ instance XmlRpcType String where
         where f (ValueString x) = Just x
               f (ValueUnwrapped x) = Just x
               f _ = Nothing
+    getType _ = TString
+
+instance XmlRpcType Text where
+    toValue = ValueString . T.unpack
+    fromValue = (fmap T.pack) . fromValue
     getType _ = TString
 
 instance XmlRpcType BS.ByteString where

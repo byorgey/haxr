@@ -49,6 +49,7 @@ Library
                  old-locale,
                  old-time,
                  time,
+                 text,
                  array,
                  utf8-string,
                  template-haskell,
