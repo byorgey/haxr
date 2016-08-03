@@ -279,7 +279,7 @@ instance XmlRpcType String where
 
 instance XmlRpcType Text where
     toValue = ValueString . T.unpack
-    fromValue = (fmap T.pack) . fromValue
+    fromValue = (liftM T.pack) . fromValue
     getType _ = TString
 
 instance XmlRpcType BS.ByteString where
