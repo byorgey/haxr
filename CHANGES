@@ -1,3 +1,7 @@
+* 3000.11.2 (9 August 2016)
+
+  - Add XmlRpcType instance for Text
+
 * 3000.11.1.6 (30 May 2016)
 
   - bug fix: default port is now 80 or 443 based on protocol
