@@ -1,30 +1,31 @@
 module Network.XmlRpc.Introspect where
 
-import           Network.XmlRpc.Client
-import           Network.XmlRpc.Internals
+import Network.XmlRpc.Client
+import Network.XmlRpc.Internals
+import Data.Text (Text)
 
 type Signature = ([Type],Type)
-type Help = String
-type MethodInfo = (String,[Signature],Help)
+type Help = Text
+type MethodInfo = (Text,[Signature],Help)
 
 -- Primitive introspection functions
 
-listMethods :: String -> IO [String]
+listMethods :: URL -> IO [Text]
 listMethods url = remote url "system.listMethods"
 
-methodSignature :: String -> String -> IO [[String]]
+methodSignature :: URL -> Text -> IO [[String]]
 methodSignature url = remote url "system.methodSignature"
 
-methodHelp :: String -> String -> IO String
+methodHelp :: URL -> Text -> IO Text
 methodHelp url = remote url "system.methodHelp"
 
 
-signatures :: String -> String -> IO [Signature]
+signatures :: URL -> Text -> IO [Signature]
 signatures url name = do
                       sigs <- methodSignature url name
-                      return [ (map read as,read r) | (r:as) <- sigs ]
+                      return [ (map read as, read r) | (r:as) <- sigs ]
 
-methodInfo :: String -> String -> IO MethodInfo
+methodInfo :: URL -> Text -> IO MethodInfo
 methodInfo url name = do
                       sigs <- signatures url name
                       help <- methodHelp url name

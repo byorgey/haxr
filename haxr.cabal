@@ -1,75 +1,55 @@
-Name: haxr
-Version: 3000.11.2
-Cabal-version: >=1.10
-Build-type: Simple
-Copyright: Bjorn Bringert, 2003-2006
-License: BSD3
-License-file: LICENSE
-Author: Bjorn Bringert <bjorn@bringert.net>
-Maintainer: Brent Yorgey <byorgey@gmail.com>
-Homepage: http://www.haskell.org/haskellwiki/HaXR
-Category: Network
-Synopsis: XML-RPC client and server library.
-Description:
+name:               haxr
+version:            3000.11.2
+author:             Bjorn Bringert <bjorn@bringert.net>
+maintainer:         Brent Yorgey <byorgey@gmail.com>
+copyright:          Bjorn Bringert, 2003-2006
+license:            BSD3
+license-file:       LICENSE
+homepage:           http://www.haskell.org/haskellwiki/HaXR
+category:           Network
+build-type:         Simple
+cabal-version:      >=1.10
+synopsis:           XML-RPC client and server library.
+description:
         HaXR is a library for writing XML-RPC
         client and server applications in Haskell.
 
-Extra-Source-Files:
+extra-source-files:
         CHANGES
         examples/make-stubs.hs        examples/parse_response.hs    examples/Person.hs
         examples/PersonTH.hs          examples/person_client.hs     examples/person_server.hs
         examples/raw_call.hs          examples/simple_client.hs     examples/simple_server.hs
         examples/test_client.hs       examples/test_server.hs       examples/time-xmlrpc-com.hs
         examples/validate.hs          examples/Makefile
-Bug-reports: https://github.com/byorgey/haxr/issues
-Tested-with: GHC == 7.8.4, GHC == 7.10.3, GHC == 8.0.1
+bug-reports: https://github.com/byorgey/haxr/issues
+tested-with: GHC == 7.8.4, GHC == 7.10.3, GHC == 8.0.1
 
-Source-repository head
+source-repository head
   type:     git
   location: git://github.com/byorgey/haxr.git
 
-flag network-uri
-   description: Get Network.URI from the network-uri package
-   default: True
+library
+  hs-source-dirs: src
+  build-depends:  base              >= 4.6 && < 5
+                , time
+                , text
+                , tagsoup
+                , containers
+                , bytestring
+                , base64-bytestring
+                , template-haskell
+                , http-client-tls
+                , http-client       >= 0.4.30
+                , network-uri
+                , http-types
 
-Library
-  Build-depends: base < 5,
-                 base-compat >= 0.8 && < 0.10,
-                 mtl,
-                 mtl-compat,
-                 network < 2.7,
-                 http-streams,
-                 HsOpenSSL,
-                 io-streams,
-                 http-types,
-                 HaXml >= 1.22 && < 1.26,
-                 http-streams,
-                 bytestring,
-                 base64-bytestring,
-                 old-locale,
-                 old-time,
-                 time,
-                 text,
-                 array,
-                 utf8-string,
-                 template-haskell,
-                 blaze-builder >= 0.2 && < 0.5
+  exposed-modules:    Network.XmlRpc.Internals
+                    , Network.XmlRpc.Introspect
+                    , Network.XmlRpc.Client
+                    , Network.XmlRpc.TH
+  --                  , Network.XmlRpc.Server
+  other-modules:      Network.XmlRpc.Base64
+                    , Network.XmlRpc.BasicAuth
 
-  if flag(network-uri)
-    build-depends: network-uri >= 2.6, network >= 2.6
-  else
-    build-depends: network-uri < 2.6, network < 2.6
-
-  Exposed-Modules:
-        Network.XmlRpc.Client,
-        Network.XmlRpc.Server,
-        Network.XmlRpc.Internals,
-        Network.XmlRpc.Introspect,
-        Network.XmlRpc.THDeriveXmlRpcType,
-        Network.XmlRpc.Pretty,
-        Network.XmlRpc.DTD_XMLRPC
-  Other-Modules:
-        Network.XmlRpc.Base64
-  Default-extensions: OverlappingInstances, TypeSynonymInstances, FlexibleInstances
-  Other-extensions: OverloadedStrings, GeneralizedNewtypeDeriving, TemplateHaskell
-  Default-language: Haskell2010
+  default-extensions: OverloadedStrings
+  default-language:   Haskell2010

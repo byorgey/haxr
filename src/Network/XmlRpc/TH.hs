@@ -15,13 +15,12 @@
 {-# LANGUAGE CPP             #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-module Network.XmlRpc.THDeriveXmlRpcType (asXmlRpcStruct) where
+module Network.XmlRpc.TH (asXmlRpcStruct) where
 
-import           Control.Monad            (liftM, replicateM)
-import           Data.List                (genericLength)
-import           Data.Maybe               (maybeToList)
-import           Language.Haskell.TH
-import           Network.XmlRpc.Internals hiding (Type)
+import Data.Text (Text)
+import Language.Haskell.TH
+import Control.Monad (liftM, replicateM)
+import Network.XmlRpc.Internals hiding (Type)
 
 -- | Creates an 'XmlRpcType' instance which handles a Haskell record
 --   as an XmlRpc struct. Example:
@@ -45,7 +44,7 @@ mkInstance  (DataD _ n _ _ [RecC c fs] _) =
 mkInstance  (DataD _ n _ [RecC c fs] _) =
 #endif
     do
-    let ns = (map (\ (f,_,t) -> (unqual f, isMaybe t)) fs)
+    let ns = (map (\ (f,_,t) -> unqual f) fs)
     tv <- mkToValue ns
     fv <- mkFromValue c ns
     gt <- mkGetType
@@ -55,37 +54,27 @@ mkInstance  (DataD _ n _ [RecC c fs] _) =
 
 mkInstance _ = error "Can only derive XML-RPC type for simple record types"
 
-
-isMaybe :: Type -> Bool
-isMaybe (AppT (ConT n) _) | n == ''Maybe = True
-isMaybe _ = False
-
-
 unqual :: Name -> Name
 unqual = mkName . reverse . takeWhile (`notElem` [':','.']) . reverse . show
 
-mkToValue :: [(Name,Bool)] -> Q [Dec]
+mkToValue :: [Name] -> Q [Dec]
 mkToValue fs =
     do
     p <- newName "p"
     simpleFun 'toValue [varP p]
                 (appE (varE 'toValue)
-                          (appE [| concat |] $ listE $ map (fieldToTuple p) fs))
+                          (listE $ map (fieldToTuple p) fs))
 
 
 simpleFun :: Name -> [PatQ] -> ExpQ -> Q [Dec]
 simpleFun n ps b = sequence [funD n [clause ps (normalB b) []]]
 
-fieldToTuple :: Name -> (Name,Bool) -> ExpQ
-fieldToTuple p (n,False) = listE [tupE [stringE (show n),
-                                         appE (varE 'toValue)
-                                         (appE (varE n) (varE p))
-                                        ]
-                                 ]
-fieldToTuple p (n,True) =
-    [| map (\v -> ($(stringE (show n)), toValue v)) $ maybeToList $(appE (varE n) (varE p)) |]
+fieldToTuple :: Name -> Name -> ExpQ
+fieldToTuple p n = tupE [ sigE (stringE (show n)) [t|Text|],
+                          appE (varE 'toValue) (appE (varE n) (varE p))
+                        ]
 
-mkFromValue :: Name -> [(Name,Bool)] -> Q [Dec]
+mkFromValue :: Name -> [Name] -> Q [Dec]
 mkFromValue c fs =
     do
     names <- replicateM (length fs) (newName "x")
@@ -96,10 +85,8 @@ mkFromValue c fs =
                       zipWith (mkGetField t) (map varP names) fs ++
                       [noBindS $ appE [| return |] $ appsE (conE c:map varE names)]
 
-mkGetField t p (f,False) = bindS p (appsE [varE 'getField,
-                                           stringE (show f), varE t])
-mkGetField t p (f,True) = bindS p (appsE [varE 'getFieldMaybe,
-                                          stringE (show f), varE t])
+mkGetField t p f = bindS p $
+    appsE [varE 'getField, stringE (show f), varE t]
 
 mkGetType :: Q [Dec]
 mkGetType = simpleFun 'getType [wildP]
