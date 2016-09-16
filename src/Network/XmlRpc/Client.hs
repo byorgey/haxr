@@ -1,3 +1,5 @@
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Network.XmlRpc.Client
@@ -39,40 +41,46 @@ import Network.XmlRpc.BasicAuth
 import Network.XmlRpc.Internals
 import Network.HTTP.Client.TLS
 import Network.HTTP.Client
+import Data.Text.IO as T
 
 -- | URL type is a String synonym
 type URL = String
 
 -- | Gets the return value from a method response.
 --   Throws an exception if the response was a fault.
-handleResponse :: Monad m => MethodResponse -> m Param
-handleResponse (Fault code str) = fail ("Error " ++ show code ++ ": " ++ show str)
+handleResponse :: Monad m => MethodResponse -> Err m Param
 handleResponse (Return v)       = return v
+handleResponse (Fault code str) =
+    throwError ("Error " <> showText code <> ": " <> str)
+
+-- | Print error and fail
+printAndFail :: Err IO a -> IO a
+printAndFail = handleErr (\err -> T.putStrLn err >> fail "Terminate")
 
 -- | Sends a method call to a server and returns the response.
 --   Throws an exception if the response was an error.
-doCall :: URL -> RequestHeaders -> MethodCall -> IO MethodResponse
+doCall :: URL -> RequestHeaders -> MethodCall -> Err IO MethodResponse
 doCall url headers mc = do
     -- Prepare request
     req <- parseRequest url
     let req' = req { method = "POST"
                    , requestBody = RequestBodyBS (renderXml mc)
-                   , requestHeaders = headers ++ headers' } 
+                   , requestHeaders = headers ++ headers' }
         headers' = ("Content-Type", "text/xml") : auth url
 
     -- Request with TLS manager
-    manager <- newManager tlsManagerSettings
-    resp <- httpLbs req' manager
+    manager <- lift $ newManager tlsManagerSettings
+    resp <- lift $ httpLbs req' manager
     parseXml "methodResponse" (responseBody resp)
 
 -- | Low-level method calling function. Use this function if
 --   you need to do custom conversions between XML-RPC types and
 --   Haskell types.
 --   Throws an exception if the response was a fault.
-call :: URL         -- ^ URL for the XML-RPC server.
-     -> MethodName  -- ^ Method name.
-     -> [Value]     -- ^ The arguments.
-     -> IO Value    -- ^ The result
+call :: URL             -- ^ URL for the XML-RPC server.
+     -> MethodName      -- ^ Method name.
+     -> [Value]         -- ^ The arguments.
+     -> Err IO Value    -- ^ The result
 call url name args = doCall url [] (MethodCall name args) >>= handleResponse
 
 -- | Low-level method calling function. Use this function if
@@ -84,13 +92,13 @@ callWithHeaders :: URL            -- ^ URL for the XML-RPC server.
                 -> MethodName     -- ^ Method name.
                 -> RequestHeaders -- ^ Extra headers to add to HTTP request.
                 -> [Value]        -- ^ The arguments.
-                -> IO Value       -- ^ The result
+                -> Err IO Value   -- ^ The result
 callWithHeaders url name headers args =
     doCall url headers (MethodCall name args) >>= handleResponse
 
 -- | Call a remote method.
-remote :: Remote a =>
-          URL        -- ^ Server URL. May contain username and password on
+remote :: Remote a
+       => URL        -- ^ Server URL. May contain username and password on
                      --   the format username:password\@ before the hostname.
        -> MethodName -- ^ Remote method name.
        -> a          -- ^ Any function
@@ -100,8 +108,8 @@ remote u m = remote_ (call u m)
 
 -- | Call a remote method. Takes a list of extra headers to add to the HTTP
 --   request.
-remoteWithHeaders :: Remote a =>
-                     URL            -- ^ Server URL. May contain username and password on
+remoteWithHeaders :: Remote a
+                  => URL            -- ^ Server URL. May contain username and password on
                                     --   the format username:password\@ before the hostname.
                   -> MethodName     -- ^ Remote method name.
                   -> RequestHeaders -- ^ Extra headers to add to HTTP request.
@@ -111,14 +119,13 @@ remoteWithHeaders :: Remote a =>
 remoteWithHeaders u m headers = remote_ (callWithHeaders u m headers)
 
 class Remote a where
-    remote_ :: ([Value] -> IO Value) -> a
+    remote_ :: ([Value] -> Err IO Value) -> a
 
 instance XmlRpcType a => Remote (IO a) where
-    remote_ f = do
-        v <- f []
-        case fromValue v of
-            Just v' -> return v'
-            Nothing -> fail ("Unable to convert from " ++ show v)
+    remote_ f = printAndFail (remote_ f)
+
+instance XmlRpcType a => Remote (Err IO a) where
+    remote_ f = fromValue =<< f []
 
 instance (XmlRpcType a, Remote b) => Remote (a -> b) where
     remote_ f x = remote_ (\xs -> f (toValue x : xs))

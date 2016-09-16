@@ -31,6 +31,7 @@ source-repository head
 library
   hs-source-dirs: src
   build-depends:  base              >= 4.6 && < 5
+                , mtl
                 , time
                 , text
                 , tagsoup

@@ -1,3 +1,17 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Network.XmlRpc.BasicAuth
+-- Copyright   :  Alexander Krupenkin 2016
+-- License     :  BSD-style
+--
+-- Maintainer  :  bjorn@bringert.net
+-- Stability   :  experimental
+-- Portability :  non-portable (requires extensions and non-portable libraries)
+--
+-- HTTP Basic Auth parser for URI and header generator.
+--
+-----------------------------------------------------------------------------
+
 module Network.XmlRpc.BasicAuth (
     RequestHeaders
   , auth
