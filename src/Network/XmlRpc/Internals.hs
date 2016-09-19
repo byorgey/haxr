@@ -61,10 +61,13 @@ import           Data.Time
 import           Text.HTML.TagSoup.Tree
 import           Text.HTML.TagSoup
 
+#if ! MIN_VERSION_time(1,5,0)
+import           System.Locale (defaultTimeLocale)
+#endif
+
 -- | The format for \"dateTime.iso8601\"
 xmlRpcDateFormat :: String
 xmlRpcDateFormat = "%Y%m%dT%H:%M:%S"
-
 
 --
 -- Error monad stuff
@@ -394,6 +397,10 @@ parseDateTime t =
         Just t' -> return t'
         Nothing -> throwError ("Unable to parse LocalTime: " <> t)
  where parse = parseTimeM True defaultTimeLocale xmlRpcDateFormat
+#if ! MIN_VERSION_time(1,5,0)
+       parseTimeM _ = parseTime
+#endif
+
 
 parseMembers :: (Monad m, MonadError Text m) => [TagTree Text] -> m [(Text, Value)]
 parseMembers = go []
@@ -536,4 +543,5 @@ parseXml tagName xml =
 
 -- | Serialize 'XmlContent' as XML
 renderXml :: (XmlContent a, Show a) => a -> ByteString
-renderXml = encodeUtf8 . renderTree . pure . toXml
+renderXml = encodeUtf8 . renderTree . toList . toXml
+  where toList x = [x]

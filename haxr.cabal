@@ -37,6 +37,7 @@ library
                 , tagsoup
                 , snap-core         >= 0.6
                 , containers
+                , old-locale
                 , bytestring
                 , http-types
                 , http-client       >= 0.4.30
