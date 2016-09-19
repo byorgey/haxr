@@ -1,6 +1,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE CPP #-}
 -----------------------------------------------------------------------------
@@ -54,6 +55,7 @@ import           Data.Char (isSpace)
 import           Data.Monoid ((<>))
 import           Data.Text (Text)
 import qualified Data.Text as T
+import           Prelude.Compat
 import           Data.Map (Map)
 import qualified Data.Map as M
 import           Data.Time
