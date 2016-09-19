@@ -36,12 +36,10 @@ module Network.XmlRpc.Server (
 
 import           Network.XmlRpc.Internals
 
-import           Data.Text.Encoding (encodeUtf8)
-import           Control.Monad.IO.Class (liftIO)
-import           Control.Monad.Except (runExceptT)
 import           Control.Exception (SomeException, try,
                                     displayException)
-import           Control.Monad.Except (MonadError(..))
+import           Control.Monad.IO.Class (liftIO)
+import           Data.Text.Encoding (encodeUtf8)
 import           Data.Int (Int64)
 import qualified Data.Text as T
 import           Data.Map (Map)

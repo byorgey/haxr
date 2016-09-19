@@ -2,6 +2,7 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE CPP #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Network.XmlRpc.Internals
@@ -24,7 +25,8 @@
 
 module Network.XmlRpc.Internals (
 -- * Err staff
-Err, handleErr, throwError, lift,
+Err, handleErr, lift,
+MonadError(..), runExceptT,
 -- * Text utility
 Text, showText, readText, (<>),
 -- * XML-RPC types
@@ -39,8 +41,15 @@ parseXml, renderXml,
 
 import           Control.Monad ((>=>), liftM, liftM2, liftM3, liftM4, liftM5)
 import           Data.Typeable (Typeable, typeOf, typeRepTyCon, tyConName)
+
+#if MIN_VERSION_mtl(2,2,1)
 import           Control.Monad.Except (MonadError(throwError, catchError),
                                        ExceptT, runExceptT, lift)
+#else
+import           Control.Monad.Error (MonadError(throwError, catchError),
+                                      ExceptT, runExceptT, lift)
+#endif
+
 import           Data.Text.Encoding (encodeUtf8, decodeUtf8)
 import           Network.XmlRpc.Base64 (Base64(..))
 import           Data.ByteString (ByteString)
