@@ -40,13 +40,13 @@ import           Control.Exception (SomeException, try,
                                     displayException)
 import           Control.Monad.IO.Class (liftIO)
 import           Data.Text.Encoding (encodeUtf8)
-import           Data.Int (Int64)
 import qualified Data.Text as T
 import           Data.Map (Map)
 import qualified Data.Map as M
 import           Snap.Core
 
 -- Properties
+maxBodySize :: Num a => a
 maxBodySize = 1048576 * 10 -- 10 MiB is max request size
 
 --

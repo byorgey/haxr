@@ -3,9 +3,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE CPP #-}
-#if __GLASGOW_HASKELL__ < 710
-{-# LANGUAGE OverlappingInstances #-}
-#endif
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Network.XmlRpc.Internals
@@ -53,6 +50,7 @@ import qualified Data.ByteString.Lazy as LBS
 import qualified Data.ByteString.Char8 as BS
 import           Control.Monad.Trans (lift)
 import           Text.Read (readMaybe)
+import qualified Data.Text.Lazy as TL
 import           Data.Char (isSpace)
 import           Data.Monoid ((<>))
 import           Data.Text (Text)
@@ -220,6 +218,11 @@ typeError v = withType $ \t ->
   where withType :: (a -> m a) -> m a
         withType f = f undefined
 
+instance XmlRpcType Value where
+    toValue   = id
+    fromValue = return
+    getType _ = TUnknown
+
 instance XmlRpcType Int where
     toValue                = ValueInt
     fromValue (ValueInt x) = return x
@@ -256,9 +259,9 @@ instance XmlRpcType Text where
     fromValue x                  = typeError x
     getType _                    = TString
 
-instance XmlRpcType String where
-    toValue   = ValueString . T.pack
-    fromValue = liftM T.unpack . fromValue
+instance XmlRpcType TL.Text where
+    toValue   = toValue . TL.toStrict
+    fromValue = liftM TL.fromStrict . fromValue
     getType _ = TString
 
 instance XmlRpcType Base64 where
@@ -273,29 +276,15 @@ instance XmlRpcType LocalTime where
     fromValue x                 = typeError x
     getType _                   = TDateTime
 
--- Monotype struct
-instance {-# OVERLAPPABLE #-} XmlRpcType a => XmlRpcType (Map Text a) where
+instance XmlRpcType a => XmlRpcType [a] where
+    toValue                  = ValueArray . fmap toValue
+    fromValue (ValueArray x) = mapM fromValue x
+    fromValue x              = typeError x
+    getType _                = TArray
+
+instance XmlRpcType a => XmlRpcType (Map Text a) where
     toValue   = toValue . fmap toValue
     fromValue = fromValue >=> mapM fromValue
-    getType _ = TStruct
-
--- Monotype struct as list
-instance {-# OVERLAPPABLE #-} XmlRpcType a => XmlRpcType [(Text, a)] where
-    toValue   = toValue . fmap (fmap toValue)
-    fromValue = fromValue >=> mapM (mapM fromValue)
-    getType _ = TStruct
-
--- Polytype struct
-instance XmlRpcType (Map Text Value) where
-    toValue                    = ValueStruct
-    fromValue (ValueStruct xs) = return xs
-    fromValue x                = typeError x
-    getType _                  = TStruct
-
--- Polytype struct as list
-instance XmlRpcType [(Text, Value)] where
-    toValue   = toValue . M.fromList
-    fromValue = liftM M.toList . fromValue
     getType _ = TStruct
 
 -- | Lookup an item from struct data
@@ -305,20 +294,6 @@ getField k s = do
         Nothing -> throwError ("Struct field '" <> k <> "' not found")
         Just x  -> return x
     fromValue v
-
--- Monotype array
-instance {-# OVERLAPPABLE #-} XmlRpcType a => XmlRpcType [a] where
-    toValue                   = ValueArray . fmap toValue
-    fromValue (ValueArray xs) = mapM fromValue xs
-    fromValue x               = typeError x
-    getType _                 = TArray
-
--- Polytype array
-instance XmlRpcType [Value] where
-    toValue                   = ValueArray
-    fromValue (ValueArray xs) = return xs
-    fromValue x               = typeError x
-    getType _                 = TArray
 
 -- Tuple instances may be used for heterogenous array types.
 instance (XmlRpcType a, XmlRpcType b, XmlRpcType c, XmlRpcType d,
