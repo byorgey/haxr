@@ -47,7 +47,6 @@ import qualified Data.Map as M
 import           Snap.Core
 
 -- Properties
-maxBodySize :: Int64
 maxBodySize = 1048576 * 10 -- 10 MiB is max request size
 
 --

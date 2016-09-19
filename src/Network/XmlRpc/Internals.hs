@@ -41,20 +41,14 @@ parseXml, renderXml,
 
 import           Control.Monad ((>=>), liftM, liftM2, liftM3, liftM4, liftM5)
 import           Data.Typeable (Typeable, typeOf, typeRepTyCon, tyConName)
-
-#if MIN_VERSION_mtl(2,2,1)
-import           Control.Monad.Except (MonadError(throwError, catchError),
-                                       ExceptT, runExceptT, lift)
-#else
-import           Control.Monad.Error (MonadError(throwError, catchError),
-                                      ExceptT, runExceptT, lift)
-#endif
-
+import           Control.Monad.Trans.Except (ExceptT, runExceptT)
 import           Data.Text.Encoding (encodeUtf8, decodeUtf8)
+import           Control.Monad.Error.Class (MonadError(..))
 import           Network.XmlRpc.Base64 (Base64(..))
 import           Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.ByteString.Char8 as BS
+import           Control.Monad.Trans (lift)
 import           Text.Read (readMaybe)
 import           Data.Char (isSpace)
 import           Data.Monoid ((<>))
