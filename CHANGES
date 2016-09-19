@@ -1,3 +1,11 @@
+* 4000.0.0
+
+  - Use Text everywhere
+  - TagSoup XML parser / render
+  - XML-RPC Array and Struct can contain values with different types
+  - Simple and clean HTTP client with HTTPS and Basic Auth support
+  - Stand-alone Snap driven web-server
+
 * 3000.11.2 (9 August 2016)
 
   - Add XmlRpcType instance for Text
@@ -124,4 +132,3 @@
     ByteString
 
   - bump HaXml dependency upper bound to allow HaXml 1.23.*
-

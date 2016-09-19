@@ -123,8 +123,6 @@ data Value
   -- ^ struct
   | ValueArray ![Value]
   -- ^ array
-  | ValueAny !Value
-  -- ^ any value type
   deriving Show
 
 -- | An XML-RPC value. Use for error messages and introspection.
@@ -177,7 +175,6 @@ getValueType v = case v of
     ValueBase64 _       -> TBase64
     ValueStruct _       -> TStruct
     ValueArray _        -> TArray
-    ValueAny x          -> getValueType x
 
 -- | An method parameter type.
 type Param = Value
@@ -276,20 +273,6 @@ instance XmlRpcType LocalTime where
     fromValue x                 = typeError x
     getType _                   = TDateTime
 
--- Monotype array
-instance {-# OVERLAPPABLE #-} XmlRpcType a => XmlRpcType [a] where
-    toValue                   = ValueArray . fmap toValue
-    fromValue (ValueArray xs) = mapM fromValue xs
-    fromValue x               = typeError x
-    getType _                 = TArray
-
--- Polytype array
-instance XmlRpcType [Value] where
-    toValue                   = ValueArray
-    fromValue (ValueArray xs) = return xs
-    fromValue x               = typeError x
-    getType _                 = TArray
-
 -- Monotype struct
 instance {-# OVERLAPPABLE #-} XmlRpcType a => XmlRpcType (Map Text a) where
     toValue   = toValue . fmap toValue
@@ -322,6 +305,20 @@ getField k s = do
         Nothing -> throwError ("Struct field '" <> k <> "' not found")
         Just x  -> return x
     fromValue v
+
+-- Monotype array
+instance {-# OVERLAPPABLE #-} XmlRpcType a => XmlRpcType [a] where
+    toValue                   = ValueArray . fmap toValue
+    fromValue (ValueArray xs) = mapM fromValue xs
+    fromValue x               = typeError x
+    getType _                 = TArray
+
+-- Polytype array
+instance XmlRpcType [Value] where
+    toValue                   = ValueArray
+    fromValue (ValueArray xs) = return xs
+    fromValue x               = typeError x
+    getType _                 = TArray
 
 -- Tuple instances may be used for heterogenous array types.
 instance (XmlRpcType a, XmlRpcType b, XmlRpcType c, XmlRpcType d,
@@ -439,7 +436,6 @@ valueToTree v = case v of
     ValueStruct x   -> branch (fmap structMember (M.toList x))
     ValueArray x    -> branch [TagBranch "data" [] $
         fmap (\a -> TagBranch "value" [] [valueToTree a]) x]
-    ValueAny x      -> valueToTree x
   where branch   = TagBranch (typeText v) []
         typeText = T.pack . show . getValueType
 
