@@ -1,5 +1,5 @@
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE CPP #-}
@@ -33,8 +33,8 @@ Text, showText, readText, (<>),
 Value(..), Type(..), XmlRpcType(..),
 getField,
 -- * Method calls and repsonses
-MethodCall(..), MethodResponse(..),
-MethodName, Param,
+MethodCall(..), MethodResponse(..), Param(..),
+MethodName,
 -- * Converting
 parseXml, renderXml,
 ) where
@@ -121,7 +121,7 @@ data Value
   -- ^ struct
   | ValueArray ![Value]
   -- ^ array
-  deriving Show
+  deriving (Typeable, Show)
 
 -- | An XML-RPC value. Use for error messages and introspection.
 data Type
@@ -175,7 +175,8 @@ getValueType v = case v of
     ValueArray _        -> TArray
 
 -- | An method parameter type.
-type Param = Value
+newtype Param = Param { unParam :: Value }
+  deriving (Show, Typeable)
 
 -- | An method name.
 type MethodName = Text
@@ -438,11 +439,11 @@ instance {-# OVERLAPPABLE #-} XmlRpcType a => XmlContent a where
 
 instance XmlContent Param where
     toXml p =
-        TagBranch "param" [] [TagBranch "value" [] [valueToTree p]]
+        TagBranch "param" [] [TagBranch "value" [] [valueToTree (unParam p)]]
 
     fromXml (TagBranch "param" [] [p]) =
         case p of
-            TagBranch "value" [] [v] -> treeToValue v
+            TagBranch "value" [] [v] -> liftM Param (treeToValue v)
             _ -> throwError ("Broken param <value>: " <> renderTree [p])
     fromXml p = throwError ("Broken <param>: " <> renderTree [p])
 

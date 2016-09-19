@@ -81,9 +81,10 @@ doCall url headers mc = do
 --   Throws an exception if the response was a fault.
 call :: URL             -- ^ URL for the XML-RPC server.
      -> MethodName      -- ^ Method name.
-     -> [Value]         -- ^ The arguments.
-     -> Err IO Value    -- ^ The result
-call url name args = doCall url [] (MethodCall name args) >>= handleResponse
+     -> [Param]         -- ^ The arguments.
+     -> Err IO Param    -- ^ The result
+call url name args =
+    doCall url [] (MethodCall name args) >>= handleResponse
 
 -- | Low-level method calling function. Use this function if
 --   you need to do custom conversions between XML-RPC types and
@@ -93,8 +94,8 @@ call url name args = doCall url [] (MethodCall name args) >>= handleResponse
 callWithHeaders :: URL            -- ^ URL for the XML-RPC server.
                 -> MethodName     -- ^ Method name.
                 -> RequestHeaders -- ^ Extra headers to add to HTTP request.
-                -> [Value]        -- ^ The arguments.
-                -> Err IO Value   -- ^ The result
+                -> [Param]        -- ^ The arguments.
+                -> Err IO Param   -- ^ The result
 callWithHeaders url name headers args =
     doCall url headers (MethodCall name args) >>= handleResponse
 
@@ -121,13 +122,13 @@ remoteWithHeaders :: Remote a
 remoteWithHeaders u m headers = remote_ (callWithHeaders u m headers)
 
 class Remote a where
-    remote_ :: ([Value] -> Err IO Value) -> a
+    remote_ :: ([Param] -> Err IO Param) -> a
 
 instance XmlRpcType a => Remote (IO a) where
     remote_ f = printAndFail (remote_ f)
 
 instance XmlRpcType a => Remote (Err IO a) where
-    remote_ f = fromValue =<< f []
+    remote_ f = fromValue . unParam =<< f []
 
 instance (XmlRpcType a, Remote b) => Remote (a -> b) where
-    remote_ f x = remote_ (\xs -> f (toValue x : xs))
+    remote_ f x = remote_ (\xs -> f (Param (toValue x) : xs))

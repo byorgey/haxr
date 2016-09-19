@@ -89,7 +89,7 @@ class XmlRpcFun a where
 instance XmlRpcType a => XmlRpcFun (IO a) where
     toFun x (MethodCall _ []) =
         liftIO (try x) >>=
-            either showException (return . Return . toValue)
+            either showException (return . Return . Param . toValue)
       where showException :: (Monad m, MonadError Text m) => SomeException -> m a
             showException = throwError . T.pack . displayException
 
@@ -98,7 +98,7 @@ instance XmlRpcType a => XmlRpcFun (IO a) where
     sig x = Signature [] (getType (mType x))
 
 instance (XmlRpcType a, XmlRpcFun b) => XmlRpcFun (a -> b) where
-    toFun f (MethodCall n (x : xs)) = do v <- fromValue x
+    toFun f (MethodCall n (x : xs)) = do v <- fromValue (unParam x)
                                          toFun (f v) (MethodCall n xs)
     toFun _ _ = fail "Too few arguments"
 
