@@ -43,6 +43,7 @@ library
                 , http-client-tls
                 , network-uri
                 , transformers
+                , transformers-compat
                 , template-haskell
                 , base64-bytestring
 
