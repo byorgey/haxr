@@ -30,17 +30,16 @@ MonadError(..), runExceptT,
 -- * Text utility
 Text, showText, readText, (<>),
 -- * XML-RPC types
-Value(..), Type(..), XmlRpcType(..),
-getField,
+Value(..), Type(..), XmlRpcType(..), getField,
 -- * Method calls and repsonses
 MethodCall(..), MethodResponse(..), Param(..),
 MethodName,
--- * Converting
-parseXml, renderXml,
+-- * Converting XML
+XmlContent(..), parseXml, renderXml,
 ) where
 
-import           Control.Monad ((>=>), liftM, liftM2, liftM3, liftM4, liftM5)
 import           Data.Typeable (Typeable, typeOf, typeRepTyCon, tyConName)
+import           Control.Monad (liftM, liftM2, liftM3, liftM4, liftM5)
 import           Control.Monad.Trans.Except (ExceptT, runExceptT)
 import           Data.Text.Encoding (encodeUtf8, decodeUtf8)
 import           Control.Monad.Error.Class (MonadError(..))
@@ -284,9 +283,10 @@ instance XmlRpcType a => XmlRpcType [a] where
     getType _                = TArray
 
 instance XmlRpcType a => XmlRpcType (Map Text a) where
-    toValue   = toValue . fmap toValue
-    fromValue = fromValue >=> mapM fromValue
-    getType _ = TStruct
+    toValue                   = ValueStruct . fmap toValue
+    fromValue (ValueStruct x) = mapM fromValue x
+    fromValue x               = typeError x
+    getType _                 = TStruct
 
 -- | Lookup an item from struct data
 getField :: (Monad m, MonadError Text m, XmlRpcType a) => Text -> Map Text Value -> m a
@@ -433,9 +433,9 @@ class XmlContent a where
     toXml   :: a -> TagTree Text
     fromXml :: (Monad m, MonadError Text m) => TagTree Text -> m a
 
-instance {-# OVERLAPPABLE #-} XmlRpcType a => XmlContent a where
-    toXml   = valueToTree . toValue
-    fromXml = treeToValue >=> fromValue
+instance XmlContent Value where
+    toXml   = valueToTree
+    fromXml = treeToValue
 
 instance XmlContent Param where
     toXml p =
@@ -484,7 +484,7 @@ instance XmlContent MethodResponse where
             TagBranch "params" [] [param] -> liftM Return (fromXml param)
 
             TagBranch "fault" [] [err] -> do
-                errStruct <- fromXml err
+                errStruct <- fromValue =<< fromXml err
                 code <- getField "faultCode" errStruct
                 str <- getField "faultString" errStruct
                 return (Fault code str)
