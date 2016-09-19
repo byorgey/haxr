@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Network.XmlRpc.Base64
@@ -17,11 +18,12 @@ module Network.XmlRpc.Base64 (
   , decode
 ) where
 
-import           Data.ByteString (ByteString)
 import qualified Data.ByteString.Base64 as B64
+import           Data.ByteString (ByteString)
+import           Data.Typeable (Typeable)
 
 newtype Base64 = Base64 { unBase64 :: ByteString }
-  deriving (Show, Eq)
+  deriving (Show, Eq, Typeable)
 
 encode :: ByteString -> Base64
 encode = Base64 . B64.encode
