@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE CPP #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Network.XmlRpc.Server
@@ -36,10 +37,9 @@ module Network.XmlRpc.Server (
 
 import           Network.XmlRpc.Internals
 
-import           Control.Exception (SomeException, try,
-                                    displayException)
 import           Control.Monad.IO.Class (liftIO)
 import           Data.Text.Encoding (encodeUtf8)
+import           Control.Exception
 import qualified Data.Text as T
 import           Data.Map (Map)
 import qualified Data.Map as M
@@ -91,7 +91,11 @@ instance XmlRpcType a => XmlRpcFun (IO a) where
         liftIO (try x) >>=
             either showException (return . Return . Param . toValue)
       where showException :: (Monad m, MonadError Text m) => SomeException -> m a
+#if MIN_VERSION_base(4,8,0)
             showException = throwError . T.pack . displayException
+#else
+            showException = throwError . T.pack . show
+#endif
 
     toFun _ _ = fail "Too many arguments"
 
