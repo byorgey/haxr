@@ -35,20 +35,22 @@ library
                 , time
                 , text
                 , tagsoup
+                , snap-core         >= 0.6 && < 1
+                , io-streams
                 , containers
                 , bytestring
-                , base64-bytestring
-                , template-haskell
-                , http-client-tls
-                , http-client       >= 0.4.30
-                , network-uri
                 , http-types
+                , http-client       >= 0.4.30
+                , http-client-tls
+                , network-uri
+                , transformers
+                , template-haskell
+                , base64-bytestring
 
   exposed-modules:    Network.XmlRpc.Internals
-                    , Network.XmlRpc.Introspect
+                    , Network.XmlRpc.Server
                     , Network.XmlRpc.Client
                     , Network.XmlRpc.TH
-  --                  , Network.XmlRpc.Server
   other-modules:      Network.XmlRpc.Base64
                     , Network.XmlRpc.BasicAuth
 

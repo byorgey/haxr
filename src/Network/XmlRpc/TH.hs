@@ -17,7 +17,6 @@
 
 module Network.XmlRpc.TH (asXmlRpcStruct) where
 
-import Data.Text (Text)
 import Language.Haskell.TH
 import Control.Monad (liftM, replicateM)
 import Network.XmlRpc.Internals hiding (Type)
@@ -44,7 +43,7 @@ mkInstance  (DataD _ n _ _ [RecC c fs] _) =
 mkInstance  (DataD _ n _ [RecC c fs] _) =
 #endif
     do
-    let ns = (map (\ (f,_,t) -> unqual f) fs)
+    let ns = (map (\ (f,_,_) -> unqual f) fs)
     tv <- mkToValue ns
     fv <- mkFromValue c ns
     gt <- mkGetType
@@ -85,6 +84,7 @@ mkFromValue c fs =
                       zipWith (mkGetField t) (map varP names) fs ++
                       [noBindS $ appE [| return |] $ appsE (conE c:map varE names)]
 
+mkGetField :: Show a => Name -> PatQ -> a -> StmtQ
 mkGetField t p f = bindS p $
     appsE [varE 'getField, stringE (show f), varE t]
 

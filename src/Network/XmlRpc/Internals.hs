@@ -46,7 +46,6 @@ import           Network.XmlRpc.Base64 (Base64(..))
 import           Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.ByteString.Char8 as BS
-import           Control.Exception (try)
 import           Text.Read (readMaybe)
 import           Data.Char (isSpace)
 import           Data.Monoid ((<>))
@@ -63,6 +62,7 @@ import           Text.HTML.TagSoup
 xmlRpcDateFormat :: String
 xmlRpcDateFormat = "%Y%m%dT%H:%M:%S"
 
+
 --
 -- Error monad stuff
 --
@@ -75,26 +75,16 @@ handleErr h m = do
     Right x <- runExceptT (catchError m (lift . h))
     return x
 
--- | Convert a 'Maybe' value to a value in any monad
-maybeToM :: MonadError Text m
-         => Text    -- ^ Error message to fail with for 'Nothing'
-         -> Maybe a -- ^ The 'Maybe' value.
-         -> m a     -- ^ The resulting value in the monad.
-maybeToM err Nothing = throwError err
-maybeToM _ (Just x)  = return x
-
--- | Convert a 'Maybe' value to a value in any monad
-eitherToM :: MonadError Text m
-          => Text            -- ^ Error message to fail with for 'Left'
-          -> Either Text a   -- ^ The 'Either' value.
-          -> m a             -- ^ The resulting value in the monad.
-eitherToM err (Left s)  = throwError (err <> ": " <> s)
-eitherToM   _ (Right x) = return x
+--
+-- Text staff
+--
 
 -- | Safe read for 'Text'
-readText :: (Monad m, Read a) => Text -> Err m a
-readText t = maybeToM ("Unable to parse: " <> t)
-                      (readMaybe (T.unpack t))
+readText :: (Monad m, MonadError Text m, Read a) => Text -> m a
+readText t =
+    case readMaybe (T.unpack t) of
+        Nothing -> throwError ("Unable to parse: " <> t)
+        Just t' -> return t'
 
 -- | Show value to 'Text'
 showText :: Show a => a -> Text
@@ -211,13 +201,12 @@ class Typeable a => XmlRpcType a where
 
     -- | Convert from a 'Value' to this type. May fail if
     --   if there is a type error.
-    fromValue :: Monad m => Value -> Err m a
+    fromValue :: (Monad m, MonadError Text m) => Value -> m a
 
     -- | Get type of 'XmlRpcType'
     getType   :: a -> Type
-    getType = getValueType . toValue
 
-typeError :: (Monad m, XmlRpcType a) => Value -> Err m a
+typeError :: (Monad m, MonadError Text m, XmlRpcType a) => Value -> m a
 typeError v = withType $ \t ->
     throwError $ "Type disparity: XML-RPC '"
                <> showText (getValueType v) <> "', Haskell '"
@@ -229,81 +218,96 @@ instance XmlRpcType Int where
     toValue                = ValueInt
     fromValue (ValueInt x) = return x
     fromValue x            = typeError x
+    getType _              = TInt
 
 instance XmlRpcType Integer where
     toValue                = ValueInt . fromIntegral
     fromValue (ValueInt x) = return (fromIntegral x)
     fromValue x            = typeError x
+    getType _              = TInt
 
 instance XmlRpcType Double where
     toValue                   = ValueDouble
     fromValue (ValueDouble x) = return x
     fromValue x               = typeError x
+    getType _                 = TDouble
 
 instance XmlRpcType Float where
     toValue                   = ValueDouble . realToFrac
     fromValue (ValueDouble x) = return (realToFrac x)
     fromValue x               = typeError x
+    getType _                 = TDouble
 
 instance XmlRpcType Bool where
     toValue                 = ValueBool
     fromValue (ValueBool x) = return x
     fromValue x             = typeError x
+    getType _               = TBool
 
 instance XmlRpcType Text where
     toValue                      = ValueString
     fromValue (ValueString x)    = return x
     fromValue x                  = typeError x
+    getType _                    = TString
 
 instance XmlRpcType String where
     toValue   = ValueString . T.pack
     fromValue = liftM T.unpack . fromValue
+    getType _ = TString
 
 instance XmlRpcType Base64 where
     toValue                   = ValueBase64
     fromValue (ValueBase64 x) = return x
     fromValue x               = typeError x
+    getType _                 = TBase64
 
 instance XmlRpcType LocalTime where
     toValue                     = ValueDateTime
     fromValue (ValueDateTime x) = return x
     fromValue x                 = typeError x
+    getType _                   = TDateTime
 
 -- Monotype array
 instance {-# OVERLAPPABLE #-} XmlRpcType a => XmlRpcType [a] where
     toValue                   = ValueArray . fmap toValue
     fromValue (ValueArray xs) = mapM fromValue xs
     fromValue x               = typeError x
+    getType _                 = TArray
 
 -- Polytype array
 instance XmlRpcType [Value] where
     toValue                   = ValueArray
     fromValue (ValueArray xs) = return xs
     fromValue x               = typeError x
+    getType _                 = TArray
 
 -- Monotype struct
 instance {-# OVERLAPPABLE #-} XmlRpcType a => XmlRpcType (Map Text a) where
     toValue   = toValue . fmap toValue
     fromValue = fromValue >=> mapM fromValue
+    getType _ = TStruct
 
 -- Monotype struct as list
 instance {-# OVERLAPPABLE #-} XmlRpcType a => XmlRpcType [(Text, a)] where
     toValue   = toValue . fmap (fmap toValue)
     fromValue = fromValue >=> mapM (mapM fromValue)
+    getType _ = TStruct
 
 -- Polytype struct
 instance XmlRpcType (Map Text Value) where
     toValue                    = ValueStruct
     fromValue (ValueStruct xs) = return xs
     fromValue x                = typeError x
+    getType _                  = TStruct
 
 -- Polytype struct as list
 instance XmlRpcType [(Text, Value)] where
     toValue   = toValue . M.fromList
     fromValue = liftM M.toList . fromValue
+    getType _ = TStruct
 
 -- | Lookup an item from struct data
-getField :: (Monad m, XmlRpcType a) => Text -> Map Text Value -> Err m a
+getField :: (Monad m, MonadError Text m, XmlRpcType a) => Text -> Map Text Value -> m a
 getField k s = do
     v <- case M.lookup k s of
         Nothing -> throwError ("Struct field '" <> k <> "' not found")
@@ -320,6 +324,7 @@ instance (XmlRpcType a, XmlRpcType b, XmlRpcType c, XmlRpcType d,
         liftM5 (,,,,) (fromValue v) (fromValue w) (fromValue x)
                       (fromValue y) (fromValue z)
     fromValue x = typeError x
+    getType _   = TArray
 
 instance (XmlRpcType a, XmlRpcType b, XmlRpcType c, XmlRpcType d) =>
          XmlRpcType (a,b,c,d) where
@@ -328,24 +333,27 @@ instance (XmlRpcType a, XmlRpcType b, XmlRpcType c, XmlRpcType d) =>
     fromValue (ValueArray [w,x,y,z]) =
         liftM4 (,,,) (fromValue w) (fromValue x) (fromValue y) (fromValue z)
     fromValue x = typeError x
+    getType _   = TArray
 
 instance (XmlRpcType a, XmlRpcType b, XmlRpcType c) => XmlRpcType (a,b,c) where
     toValue (x,y,z) = ValueArray [toValue x, toValue y, toValue z]
     fromValue (ValueArray [x,y,z]) =
         liftM3 (,,) (fromValue x) (fromValue y) (fromValue z)
     fromValue x = typeError x
+    getType _   = TArray
 
 instance (XmlRpcType a, XmlRpcType b) => XmlRpcType (a,b) where
     toValue (x,y) = ValueArray [toValue x, toValue y]
     fromValue (ValueArray [x,y]) = liftM2 (,) (fromValue x) (fromValue y)
     fromValue x = typeError x
+    getType _   = TArray
 
-leafText :: Monad m => [TagTree Text] -> Err m Text
+leafText :: (Monad m, MonadError Text m) => [TagTree Text] -> m Text
 leafText [TagLeaf (TagText t)] = return t
 leafText x = throwError ("Broken text leaf: " <> renderTree x)
 
 -- | 'Value' parser from XML tags
-treeToValue :: Monad m => TagTree Text -> Err m Value
+treeToValue :: (Monad m, MonadError Text m) => TagTree Text -> m Value
 treeToValue x@(TagBranch typ _ inner) = do
     t <- readText typ
     case t of
@@ -377,14 +385,14 @@ treeToValue x@(TagBranch typ _ inner) = do
         TUnknown    -> throwError ("Unknown value: " <> renderTree [x])
 treeToValue x = throwError ("Broken XML: " <> renderTree [x])
 
-parseDateTime :: Monad m => Text -> Err m LocalTime
+parseDateTime :: (Monad m, MonadError Text m) => Text -> m LocalTime
 parseDateTime t =
     case parse (T.unpack t) of
         Just t' -> return t'
         Nothing -> throwError ("Unable to parse LocalTime: " <> t)
  where parse = parseTimeM True defaultTimeLocale xmlRpcDateFormat
 
-parseMembers :: Monad m => [TagTree Text] -> Err m [(Text, Value)]
+parseMembers :: (Monad m, MonadError Text m) => [TagTree Text] -> m [(Text, Value)]
 parseMembers = go []
   where go acc [] = return (reverse acc)
         go acc (TagBranch "member" [] m : xs) =
@@ -393,10 +401,10 @@ parseMembers = go []
                     -> do n <- leafText name
                           v <- treeToValue value
                           go ((n, v) : acc) xs
-                m -> throwError ("Broken struct <name> and <value>: " <> renderTree m)
+                b -> throwError ("Broken struct <name> and <value>: " <> renderTree b)
         go _ m = throwError ("Broken <member>: " <> renderTree m)
 
-parseArray :: Monad m => [TagTree Text] -> Err m [Value]
+parseArray :: (Monad m, MonadError Text m) => [TagTree Text] -> m [Value]
 parseArray [TagBranch "data" [] values] = mapM go values
   where go (TagBranch "value" [] [v]) = treeToValue v
         go v = throwError ("Broken <value>: " <> renderTree [v])
@@ -438,7 +446,7 @@ structMember (name, value) =
 -- | TagSoup driven XML content encoder/decoder
 class XmlContent a where
     toXml   :: a -> TagTree Text
-    fromXml :: Monad m => TagTree Text -> Err m a
+    fromXml :: (Monad m, MonadError Text m) => TagTree Text -> m a
 
 instance {-# OVERLAPPABLE #-} XmlRpcType a => XmlContent a where
     toXml   = valueToTree . toValue
@@ -501,7 +509,7 @@ instance XmlContent MethodResponse where
     fromXml x = throwError ("Broken <methodResponse>: " <> renderTree [x])
 
 -- | Lookup 'TagBranch' with given name
-lookupBranch :: Monad m => [TagTree Text] -> Text -> Err m (TagTree Text)
+lookupBranch :: (Monad m, MonadError Text m) => [TagTree Text] -> Text -> m (TagTree Text)
 lookupBranch (TagLeaf _ : xs) n = lookupBranch xs n
 lookupBranch (x@(TagBranch tagName _ _) : xs) name
     | tagName == name = return x
@@ -513,7 +521,7 @@ lookupBranch [] n = throwError ("Tag '" <> n <> "' not found")
 --
 
 -- | Parse XML branch with given name
-parseXml :: (Monad m, XmlContent a) => Text -> LBS.ByteString -> Err m a
+parseXml :: (MonadError Text m, XmlContent a) => Text -> LBS.ByteString -> m a
 parseXml tagName xml =
     fromXml =<< lookupBranch (parse xml) tagName
   where parse = parseTree . dropNL . decodeUtf8 . LBS.toStrict

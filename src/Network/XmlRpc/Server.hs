@@ -1,7 +1,9 @@
+{-# LANGUAGE FlexibleContexts #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Network.XmlRpc.Server
 -- Copyright   :  (c) Bjorn Bringert 2003
+--                (c) Alexaner Krupenkin 2016
 -- License     :  BSD-style
 --
 -- Maintainer  :  bjorn@bringert.net
@@ -21,42 +23,56 @@
 -- > main = cgiXmlRpcServer [("examples.add", fun add)]
 -----------------------------------------------------------------------------
 
-module Network.XmlRpc.Server
-    (
-     XmlRpcMethod, ServerResult,
-     fun,
-     handleCall, methods, cgiXmlRpcServer,
-    ) where
+module Network.XmlRpc.Server (
+  -- * Basic method types
+    XmlRpcMethod(..)
+  , Signature(..)
+  , Methods
+  -- * Snap HTTP server
+  , serve
+  -- * XML-RPC method creator
+  , fun
+  ) where
 
 import           Network.XmlRpc.Internals
 
-import qualified Codec.Binary.UTF8.String   as U
-import           Control.Exception
-import           Control.Monad.Except
-import           Data.ByteString.Lazy.Char8 (ByteString)
-import qualified Data.ByteString.Lazy.Char8 as B
-import           System.IO
+import           Data.Text.Encoding (encodeUtf8)
+import           Control.Monad.IO.Class (liftIO)
+import           Control.Monad.Except (runExceptT)
+import           Control.Exception (SomeException, try,
+                                    displayException)
+import           Control.Monad.Except (MonadError(..))
+import           Data.Int (Int64)
+import qualified Data.Text as T
+import           Data.Map (Map)
+import qualified Data.Map as M
+import           Snap.Core
 
-serverName :: String
-serverName = "Haskell XmlRpcServer/0.1"
+-- Properties
+maxBodySize :: Int64
+maxBodySize = 1048576 * 10 -- 10 MiB is max request size
 
 --
 -- API
 --
 
-type ServerResult = Err IO MethodResponse
+-- | Method signature (args types, return type)
+data Signature = Signature
+  { arguments :: [Type]
+  , result    :: Type
+  } deriving Show
 
-type Signature = ([Type], Type)
+-- | Method function, take 'MethodCall' structure and return 'MehtodResponse'
+type MethodFun = MethodCall -> Err IO MethodResponse
 
 -- | The type of XML-RPC methods on the server.
-type XmlRpcMethod = (MethodCall -> ServerResult, Signature)
+data XmlRpcMethod = XmlRpcMethod
+  { runMethod :: MethodFun
+  , signature :: Signature
+  }
 
-showException :: SomeException -> String
-showException = show
-
-handleIO :: IO a -> Err IO a
-handleIO io = lift (try io) >>= either (fail . showException) return
-
+-- | The type of XML-RPC exported methods.
+type Methods = Map MethodName XmlRpcMethod
 
 --
 -- Converting Haskell functions to XML-RPC methods
@@ -67,27 +83,31 @@ handleIO io = lift (try io) >>= either (fail . showException) return
 --   t1 -> ... -> tn -> IO r@
 --   into an 'XmlRpcMethod'
 fun :: XmlRpcFun a => a -> XmlRpcMethod
-fun f = (toFun f, sig f)
+fun f = XmlRpcMethod (toFun f) (sig f)
 
 class XmlRpcFun a where
-    toFun :: a -> MethodCall -> ServerResult
-    sig :: a -> Signature
+    toFun :: a -> MethodFun
+    sig   :: a -> Signature
 
 instance XmlRpcType a => XmlRpcFun (IO a) where
-    toFun x (MethodCall _ []) = do
-                              v <- handleIO x
-                              return (Return (toValue v))
+    toFun x (MethodCall _ []) =
+        liftIO (try x) >>=
+            either showException (return . Return . toValue)
+      where showException :: (Monad m, MonadError Text m) => SomeException -> m a
+            showException = throwError . T.pack . displayException
+
     toFun _ _ = fail "Too many arguments"
-    sig x = ([], getType (mType x))
+
+    sig x = Signature [] (getType (mType x))
 
 instance (XmlRpcType a, XmlRpcFun b) => XmlRpcFun (a -> b) where
-    toFun f (MethodCall n (x:xs)) = do
-                                  v <- fromValue x
-                                  toFun (f v) (MethodCall n xs)
+    toFun f (MethodCall n (x : xs)) = do v <- fromValue x
+                                         toFun (f v) (MethodCall n xs)
     toFun _ _ = fail "Too few arguments"
-    sig f = let (a,b) = funType f
-                (as, r) = sig b
-             in (getType a : as, r)
+
+    sig f = let (a, b)         = funType f
+                Signature as r = sig b
+             in Signature (getType a : as) r
 
 mType :: m a -> a
 mType _ = undefined
@@ -95,81 +115,25 @@ mType _ = undefined
 funType :: (a -> b) -> (a, b)
 funType _ = (undefined, undefined)
 
--- FIXME: always returns error code 0
-errorToResponse :: ServerResult -> IO MethodResponse
-errorToResponse = handleError (return . Fault 0)
-
-
--- | Reads a method call from a string, uses the supplied method
---   to generate a response and returns that response as a string
-handleCall :: (MethodCall -> ServerResult) -> String -> IO ByteString
-handleCall f str = do resp <- errorToResponse (parseCall str >>= f)
-                      return (renderResponse resp)
-
--- | An XmlRpcMethod that looks up the method name in a table
---   and uses that method to handle the call.
-methods :: [(String,XmlRpcMethod)] -> MethodCall -> ServerResult
-methods t c@(MethodCall name _) =
-    do
-    (method,_) <- maybeToM ("Unknown method: " ++ name) (lookup name t)
-    method c
-
-
--- | A server with introspection support
-server :: [(String,XmlRpcMethod)] -> String -> IO ByteString
-server t = handleCall (methods (addIntrospection t))
-
-
-
 --
--- Introspection
+-- Server
 --
 
-addIntrospection :: [(String,XmlRpcMethod)] -> [(String,XmlRpcMethod)]
-addIntrospection t = t'
-        where t' = ("system.listMethods", fun (listMethods t')) :
-                   ("system.methodSignature", fun (methodSignature t')) :
-                   ("system.methodHelp", fun (methodHelp t')) : t
+-- | Create a 'Snap' by given 'Methods'
+serve :: Methods -> Snap ()
+serve ms = do
+    -- Read request
+    req <- readRequestBody maxBodySize
 
-listMethods :: [(String,XmlRpcMethod)] -> IO [String]
-listMethods t = return (fst (unzip t))
+    -- Lift call execution
+    x <- liftIO $ runExceptT $ do
+            -- Parse method request
+            c@(MethodCall name _) <- parseXml "methodCall" req
 
-methodSignature :: [(String,XmlRpcMethod)] -> String -> IO [[String]]
-methodSignature t name =
-    do
-    (_,(as,r)) <- maybeToM ("Unknown method: " ++ name) (lookup name t)
-    return [map show (r:as)]
+            -- Lookup and run method
+            case M.lookup name ms of
+                Nothing -> return (Fault 404 $ "Method '" <> name <> "' not found!")
+                Just m  -> runMethod m c
 
-methodHelp :: [(String,XmlRpcMethod)] -> String -> IO String
-methodHelp t name =
-    do
-    method <- maybeToM ("Unknown method: " ++ name) (lookup name t)
-    return (help method)
-
--- FIXME: implement
-help :: XmlRpcMethod -> String
-help _ = ""
-
-
---
--- CGI server
---
-
--- | A CGI-based XML-RPC server. Reads a request from standard input
---   and writes some HTTP headers (Content-Type and Content-Length),
---   followed by the response to standard output. Supports
---   introspection.
-cgiXmlRpcServer :: [(String,XmlRpcMethod)] -> IO ()
-cgiXmlRpcServer ms =
-    do
-    hSetBinaryMode stdin True
-    hSetBinaryMode stdout True
-    input <- U.decodeString `fmap` getContents
-    --output <- U.encodeString `fmap` server ms input
-    output <- server ms input
-    putStr ("Server: " ++ serverName ++ crlf)
-    putStr ("Content-Type: text/xml" ++ crlf)
-    putStr ("Content-Length: " ++ show (B.length output) ++ crlf)
-    putStr crlf
-    B.putStr output
-        where crlf = "\r\n"
+    -- Log error or write response
+    either (logError . encodeUtf8) (writeBS . renderXml) x

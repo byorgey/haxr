@@ -55,7 +55,9 @@ handleResponse (Fault code str) =
 
 -- | Print error and fail
 printAndFail :: Err IO a -> IO a
-printAndFail = handleErr (\err -> T.putStrLn err >> fail "Terminate")
+printAndFail = handleErr $ \err -> T.putStr "ERROR: "
+                                >> T.putStrLn err
+                                >> fail "Exit fail"
 
 -- | Sends a method call to a server and returns the response.
 --   Throws an exception if the response was an error.
