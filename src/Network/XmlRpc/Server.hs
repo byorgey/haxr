@@ -31,6 +31,7 @@ module Network.XmlRpc.Server (
   , Methods
   -- * Snap HTTP server
   , serve
+  , xmlRpcServer
   -- * XML-RPC method creator
   , fun
   ) where
@@ -39,7 +40,9 @@ import           Network.XmlRpc.Internals
 
 import           Control.Monad.IO.Class (liftIO)
 import           Data.Text.Encoding (encodeUtf8)
+import           Data.Monoid (mempty)
 import           Control.Exception
+import           Snap.Http.Server
 import qualified Data.Text as T
 import           Data.Map (Map)
 import qualified Data.Map as M
@@ -138,3 +141,11 @@ serve ms = do
 
     -- Log error or write response
     either (logError . encodeUtf8) (writeBS . renderXml) x
+
+-- | Run XML-RPC server
+xmlRpcServer :: Int     -- ^ Server port
+             -> Methods -- ^ Exported methods
+             -> IO ()
+xmlRpcServer port = simpleHttpServe config . serve
+  where config :: Config Snap a
+        config = setPort port mempty
