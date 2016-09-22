@@ -40,7 +40,6 @@ import           Network.XmlRpc.Internals
 
 import           Control.Monad.IO.Class (liftIO)
 import           Data.Text.Encoding (encodeUtf8)
-import           Data.Monoid (mempty)
 import           Control.Exception
 import           Snap.Http.Server
 import qualified Data.Text as T
@@ -50,7 +49,7 @@ import           Snap.Core
 
 -- Properties
 maxBodySize :: Num a => a
-maxBodySize = 1048576 * 10 -- 10 MiB is max request size
+maxBodySize = 1048576 * 10  -- 10 MiB is max request size
 
 --
 -- API
@@ -143,9 +142,9 @@ serve ms = do
     either (logError . encodeUtf8) (writeBS . renderXml) x
 
 -- | Run XML-RPC server
-xmlRpcServer :: Int     -- ^ Server port
-             -> Methods -- ^ Exported methods
+xmlRpcServer :: Int       -- ^ Server port
+             -> Methods   -- ^ Exported methods
              -> IO ()
 xmlRpcServer port = simpleHttpServe config . serve
   where config :: Config Snap a
-        config = setPort port mempty
+        config = setPort port defaultConfig

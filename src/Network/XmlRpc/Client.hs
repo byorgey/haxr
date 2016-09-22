@@ -37,11 +37,12 @@ module Network.XmlRpc.Client
      Remote, URL
     ) where
 
+import Control.Monad.IO.Class (MonadIO(..))
 import Network.XmlRpc.BasicAuth
 import Network.XmlRpc.Internals
 import Network.HTTP.Client.TLS
 import Network.HTTP.Client
-import Data.Text.IO as T
+import Data.Text (unpack)
 
 -- | URL type is a String synonym
 type URL = String
@@ -53,11 +54,9 @@ handleResponse (Return v)       = return v
 handleResponse (Fault code str) =
     throwError ("Error " <> showText code <> ": " <> str)
 
--- | Print error and fail
-printAndFail :: Err IO a -> IO a
-printAndFail = handleErr $ \err -> T.putStr "ERROR: "
-                                >> T.putStrLn err
-                                >> fail "Exit fail"
+-- | Catch error and fail
+errFail :: MonadIO m => Err IO a -> m a
+errFail = liftIO . handleErr (fail . unpack)
 
 -- | Sends a method call to a server and returns the response.
 --   Throws an exception if the response was an error.
@@ -125,7 +124,7 @@ class Remote a where
     remote_ :: ([Param] -> Err IO Param) -> a
 
 instance XmlRpcType a => Remote (IO a) where
-    remote_ f = printAndFail (remote_ f)
+    remote_ f = errFail (remote_ f)
 
 instance XmlRpcType a => Remote (Err IO a) where
     remote_ f = fromValue . unParam =<< f []
