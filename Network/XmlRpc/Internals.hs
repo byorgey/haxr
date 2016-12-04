@@ -37,6 +37,8 @@ toXRMember, fromXRMember,
 Err, maybeToM, handleError, ioErrorToErr
 ) where
 
+import Debug.Trace
+
 import           Control.Exception
 import           Control.Monad
 import           Control.Monad.Except
@@ -159,6 +161,7 @@ data Value =
     | ValueBase64 BS.ByteString -- ^ base 64.  NOTE that you should provide the raw data; the haxr library takes care of doing the base-64 encoding.
     | ValueStruct [(String,Value)] -- ^ struct
     | ValueArray [Value]  -- ^ array
+    | ValueNil (Maybe Value)
       deriving (Eq, Show) -- for debugging
 
 -- | An XML-RPC value. Use for error messages and introspection.
@@ -171,6 +174,7 @@ data Type =
           | TBase64
           | TStruct
           | TArray
+          | TNil
           | TUnknown
       deriving (Eq)
 
@@ -183,6 +187,7 @@ instance Show Type where
     show TBase64 = "base64"
     show TStruct = "struct"
     show TArray = "array"
+    show TNil = "nil"
     show TUnknown = "unknown"
 
 instance Read Type where
@@ -195,6 +200,7 @@ instance Read Type where
                     ("base64",r) -> [(TBase64,r)]
                     ("struct",r) -> [(TStruct,r)]
                     ("array",r) -> [(TArray,r)]
+                    ("nil",r) -> [(TNil,r)]
 
 -- | Gets the value of a struct member
 structGetValue :: Monad m => String -> Value -> Err m Value
@@ -269,6 +275,7 @@ instance XmlRpcType Bool where
               f _ = Nothing
     getType _ = TBool
 
+
 instance XmlRpcType String where
     toValue = ValueString
     fromValue = simpleFromValue f
@@ -307,6 +314,59 @@ instance XmlRpcType CalendarTime where
     toValue = toValue . calendarTimeToLocalTime
     fromValue = liftM localTimeToCalendarTime . fromValue
     getType _ = TDateTime
+
+-- FIXME: why u no work
+--instance XmlRpcType a => XmlRpcType (Maybe a)  where
+--    fromValue v = case v of
+--      ValueNil Nothing -> trace ("Nothing") $ return Nothing
+--      ValueNil (Just x) -> trace ("WAAT" ++ show x) $ fromValue x
+--      --ValueInt x -> return $ Just x
+--      --_ -> typeError v
+--      x -> trace (show x) $ return Nothing
+--      --x -> trace (show x) $ fromValue x
+--    toValue Nothing = ValueNil Nothing
+--    toValue (Just x) = ValueNil (Just $ toValue x)
+--    getType _ = TNil
+
+instance XmlRpcType (Maybe Int)  where
+    fromValue v = case v of
+      ValueNil Nothing -> return Nothing
+      ValueNil (Just x) -> fromValue x
+      ValueInt x -> return $ Just x
+      x -> return Nothing
+    toValue Nothing = ValueNil Nothing
+    toValue (Just x) = ValueNil (Just $ toValue x)
+    getType _ = TNil
+
+instance XmlRpcType (Maybe Double)  where
+    fromValue v = case v of
+      ValueNil Nothing -> return Nothing
+      ValueNil (Just x) -> fromValue x
+      ValueDouble x -> return $ Just x
+      x -> return Nothing
+    toValue Nothing = ValueNil Nothing
+    toValue (Just x) = ValueNil (Just $ toValue x)
+    getType _ = TNil
+
+instance XmlRpcType (Maybe String)  where
+    fromValue v = case v of
+      ValueNil Nothing -> return Nothing
+      ValueNil (Just x) -> fromValue x
+      ValueString x -> return $ Just x
+      x -> return Nothing
+    toValue Nothing = ValueNil Nothing
+    toValue (Just x) = ValueNil (Just $ toValue x)
+    getType _ = TNil
+
+instance XmlRpcType (Maybe Bool)  where
+    fromValue v = case v of
+      ValueNil Nothing -> return Nothing
+      ValueNil (Just x) -> fromValue x
+      ValueBool x -> return $ Just x
+      x -> return Nothing
+    toValue Nothing = ValueNil Nothing
+    toValue (Just x) = ValueNil (Just $ toValue x)
+    getType _ = TNil
 
 -- FIXME: array elements may have different types
 instance XmlRpcType a => XmlRpcType [a] where
@@ -382,6 +442,7 @@ getFieldMaybe x xs = case lookup x xs of
 toXRValue :: Value -> XR.Value
 toXRValue (ValueInt x) = XR.Value [XR.Value_AInt (XR.AInt (showInt x))]
 toXRValue (ValueBool b) = XR.Value [XR.Value_Boolean (XR.Boolean (showBool b))]
+toXRValue (ValueNil n) = XR.Value [XR.Value_Nil (XR.Nil (cvt n))]
 toXRValue (ValueString s) = XR.Value [XR.Value_AString (XR.AString (showString s))]
 toXRValue (ValueUnwrapped s) = XR.Value [XR.Value_Str s]
 toXRValue (ValueDouble d) = XR.Value [XR.Value_ADouble (XR.ADouble (showDouble d))]
@@ -397,6 +458,14 @@ showInt = show
 
 showBool :: Bool -> String
 showBool b = if b then "1" else "0"
+
+showNil :: (Maybe Value) -> String
+showNil (Nothing) = "nil"
+showNil (Just val) = "wtf"
+
+cvt :: (Maybe Value) -> (Maybe XR.Value)
+cvt Nothing = Nothing
+cvt (Just x) = Just $ toXRValue x
 
 -- escapes &, <, and <
 showString :: String -> String
@@ -449,6 +518,7 @@ fromXRValue (XR.Value vs)
   f (XR.Value_Boolean (XR.Boolean x)) = liftM ValueBool (readBool x)
   f (XR.Value_ADouble (XR.ADouble x)) = liftM ValueDouble (readDouble x)
   f (XR.Value_AString (XR.AString x)) = liftM ValueString (readString x)
+  f (XR.Value_Nil (XR.Nil x)) = liftM ValueNil (readNil x)
   f (XR.Value_DateTime_iso8601 (XR.DateTime_iso8601 x)) =
     liftM ValueDateTime (readDateTime x)
   f (XR.Value_Base64 (XR.Base64 x)) = liftM ValueBase64 (readBase64 x)
@@ -481,6 +551,10 @@ readBool s = errorRead readsBool "Error parsing boolean" s
           readsBool "1" = [(True,"")]
           readsBool "0" = [(False,"")]
           readsBool _ = []
+
+readNil :: Monad m => (Maybe XR.Value) -> Err m (Maybe Value)
+readNil Nothing = pure Nothing
+readNil (Just val) = liftM Just (fromXRValue val)
 
 -- | From the XML-RPC specification:
 --

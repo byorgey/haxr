@@ -18,6 +18,7 @@ newtype Base64 = Base64 String          deriving (Eq,Show)
 newtype Data = Data [Value]             deriving (Eq,Show)
 newtype Array = Array Data              deriving (Eq,Show)
 newtype Name = Name String              deriving (Eq,Show)
+newtype Nil = Nil (Maybe Value)         deriving (Eq,Show)
 data Member = Member Name Value
             deriving (Eq,Show)
 newtype Struct = Struct [Member]                deriving (Eq,Show)
@@ -33,6 +34,7 @@ data Value_ = Value_Str String
             | Value_Base64 Base64
             | Value_Struct Struct
             | Value_Array Array
+            | Value_Nil Nil
             deriving (Eq,Show)
 newtype Param = Param Value             deriving (Eq,Show)
 newtype Params = Params [Param]                 deriving (Eq,Show)
@@ -203,6 +205,7 @@ instance XmlContent Value_ where
     toContents (Value_Base64 a) = toContents a
     toContents (Value_Struct a) = toContents a
     toContents (Value_Array a) = toContents a
+    toContents (Value_Nil a) = toContents a
     parseContents = oneOf
         [ return (Value_Str) `apply` text
         , return (Value_I4) `apply` parseContents
@@ -215,6 +218,7 @@ instance XmlContent Value_ where
         , return (Value_Base64) `apply` parseContents
         , return (Value_Struct) `apply` parseContents
         , return (Value_Array) `apply` parseContents
+        , return (Value_Nil) `apply` parseContents
         ] `adjustErr` ("in <value>, "++)
 
 instance HTypeable Param where
@@ -285,6 +289,14 @@ instance XmlContent MethodResponse where
             ] `adjustErr` ("in <methodResponse>, "++)
         }
 
-
+instance HTypeable Nil where
+    toHType x = Defined "nil" [] []
+instance XmlContent Nil where
+    toContents (Nil a) =
+        [CElem (Elem (N "nil") [] (toContents a)) ()]
+    parseContents = do
+        { e@(Elem _ [] _) <- element ["nil"]
+        ; interior e $ return (Nil) `apply` parseContents
+        } `adjustErr` ("in <fault>, "++)
 
 {-Done-}
