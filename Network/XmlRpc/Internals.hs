@@ -358,6 +358,16 @@ instance XmlRpcType (Maybe String)  where
     toValue (Just x) = ValueNil (Just $ toValue x)
     getType _ = TNil
 
+instance XmlRpcType (Maybe Text)  where
+    fromValue v = case v of
+      ValueNil Nothing -> return Nothing
+      ValueNil (Just x) -> fromValue x
+      ValueString x -> return $ Just (T.pack x)
+      x -> return Nothing
+    toValue Nothing = ValueNil Nothing
+    toValue (Just x) = ValueNil (Just $ toValue x)
+    getType _ = TNil
+
 instance XmlRpcType (Maybe Bool)  where
     fromValue v = case v of
       ValueNil Nothing -> return Nothing
