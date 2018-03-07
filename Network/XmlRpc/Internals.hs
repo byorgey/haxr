@@ -18,6 +18,15 @@
 --
 -----------------------------------------------------------------------------
 
+#if __GLASGOW_HASKELL__ >= 710
+#define OVERLAPPABLE_ {-# OVERLAPPABLE #-}
+#define OVERLAPPING_  {-# OVERLAPPING #-}
+#else
+{-# LANGUAGE OverlappingInstances #-}
+#define OVERLAPPABLE_
+#define OVERLAPPING_
+#endif
+
 module Network.XmlRpc.Internals (
 -- * Method calls and repsonses
 MethodCall(..), MethodResponse(..),
@@ -269,7 +278,7 @@ instance XmlRpcType Bool where
               f _ = Nothing
     getType _ = TBool
 
-instance XmlRpcType String where
+instance OVERLAPPING_ XmlRpcType String where
     toValue = ValueString
     fromValue = simpleFromValue f
         where f (ValueString x) = Just x
@@ -309,7 +318,7 @@ instance XmlRpcType CalendarTime where
     getType _ = TDateTime
 
 -- FIXME: array elements may have different types
-instance XmlRpcType a => XmlRpcType [a] where
+instance OVERLAPPABLE_ XmlRpcType a => XmlRpcType [a] where
     toValue = ValueArray . map toValue
     fromValue v = case v of
                          ValueArray xs -> mapM fromValue xs
@@ -317,7 +326,7 @@ instance XmlRpcType a => XmlRpcType [a] where
     getType _ = TArray
 
 -- FIXME: struct elements may have different types
-instance XmlRpcType a => XmlRpcType [(String,a)] where
+instance OVERLAPPING_ XmlRpcType a => XmlRpcType [(String,a)] where
     toValue xs = ValueStruct [(n, toValue v) | (n,v) <- xs]
 
     fromValue v = case v of
@@ -519,7 +528,7 @@ readDateTime dt =
     maybe
         (fail $ "Error parsing dateTime '" ++ dt ++ "'")
         return
-        (parseTime defaultTimeLocale xmlRpcDateFormat dt)
+        (parseTimeM True defaultTimeLocale xmlRpcDateFormat dt)
 
 localTimeToCalendarTime :: LocalTime -> CalendarTime
 localTimeToCalendarTime l =

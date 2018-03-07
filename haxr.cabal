@@ -70,6 +70,6 @@ Library
         Network.XmlRpc.DTD_XMLRPC
   Other-Modules:
         Network.XmlRpc.Base64
-  Default-extensions: OverlappingInstances, TypeSynonymInstances, FlexibleInstances
+  Default-extensions: TypeSynonymInstances, FlexibleInstances
   Other-extensions: OverloadedStrings, GeneralizedNewtypeDeriving, TemplateHaskell
   Default-language: Haskell2010
