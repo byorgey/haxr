@@ -1,0 +1,111 @@
+--------------------------------------------------
+-- LocalPackages ---------------------------------
+--------------------------------------------------
+packages:
+
+ ./haxr.cabal
+
+----------------------------------------
+optional-packages:
+
+ ../HaXml2
+
+ ../spiros
+
+--------------------------------------------------
+---extra-packages:
+---  source-repository-package
+---    git@github.com:sboosali/HaXml2.git
+
+--------------------------------------------------
+-- CabalFlags ------------------------------------
+--------------------------------------------------
+
+jobs: 6
+-- ^
+-- = ($ncpus - 2)
+
+--------------------------------------------------
+-- LocalFlags (which apply only to LocalPackages)-
+--------------------------------------------------
+
+haddock-hyperlink-source: True
+haddock-hoogle:           True
+
+--------------------------------------------------
+
+extra-lib-dirs:     /home/sboo/.nix-profile/lib/
+extra-include-dirs: /home/sboo/.nix-profile/include/
+extra-prog-path:    /home/sboo/.nix-profile/bin/
+---extra-prog-path:    /home/sboo/.nix-profile/libexec/
+
+--------------------------------------------------
+
+tests:         True
+benchmarks:    True
+documentation: False
+
+-- tests:         False
+-- benchmarks:    False
+-- documentation: False
+
+--------------------------------------------------
+
+
+
+--------------------------------------------------
+-- GlobalFlags -----------------------------------
+--------------------------------------------------
+
+--profiling:     True
+
+--------------------------------------------------
+
+package *
+  extra-lib-dirs:     /home/sboo/.nix-profile/lib/
+  extra-include-dirs: /home/sboo/.nix-profile/include/
+  extra-prog-path:    /home/sboo/.nix-profile/bin/
+
+-- package zlib
+--   extra-lib-dirs: /home/sboo/.nix-profile/lib/
+
+-- package wai
+--   extra-lib-dirs: /home/sboo/.nix-profile/lib/
+
+-- package wai-extra
+--   extra-lib-dirs: /home/sboo/.nix-profile/lib/
+
+-- package wai-app-static
+--   extra-lib-dirs: /home/sboo/.nix-profile/lib/
+
+-- package warp
+--   extra-lib-dirs: /home/sboo/.nix-profile/lib/
+
+--------------------------------------------------
+-- (ToDo) ----------------------------------------
+--------------------------------------------------
+
+-- static: True
+-- 
+-- Roll this package, and all its dependent libraries, into a combined `.a` archive, via GHC-8.4's `-staticlib`.
+-- 
+
+-- shared: True 
+-- exectuable-dynamic: True
+-- 
+-- Build shared library.
+-- Recompiles everything with -fPIC` (to generate position independent code).
+-- 
+
+-- nix: True
+-- 
+-- most `cabal-install` flags are `cabal.project` fields too, but this isn't.
+-- use `$ cabal --enable-nix new-build`
+
+--------------------------------------------------
+-- (Notes) ---------------------------------------
+--------------------------------------------------
+
+-- http://cabal.readthedocs.io/en/latest/nix-local-build.html
+
+--------------------------------------------------

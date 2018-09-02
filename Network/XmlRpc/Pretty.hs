@@ -9,7 +9,7 @@
 module Network.XmlRpc.Pretty (document, content, element, 
                               doctypedecl, prolog, cp) where
 
-import Prelude hiding (maybe, elem, concat, null, head)
+import Prelude hiding (maybe, elem, concat, null, head, (<>))
 import qualified Prelude as P
 import Data.ByteString.Lazy.Char8 (ByteString(), elem, empty)
 import qualified Data.ByteString.Lazy.UTF8 as BU
@@ -21,7 +21,7 @@ import Data.Monoid (Monoid, mempty, mconcat, mappend)
 import qualified GHC.Exts as Ext
 
 -- |A 'Builder' with a recognizable empty value.
-newtype MBuilder = MBuilder { unMB :: Maybe Builder } deriving Monoid
+newtype MBuilder = MBuilder { unMB :: Maybe Builder } deriving (Semigroup,Monoid)
 
 -- |'Maybe' eliminator specialized for 'MBuilder'.
 maybe :: (t -> MBuilder) -> Maybe t -> MBuilder
