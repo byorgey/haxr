@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings, GeneralizedNewtypeDeriving #-}
 
 -- | This is a fast non-pretty-printer for turning the internal representation
@@ -17,11 +18,22 @@ import Text.XML.HaXml.Types
 import Blaze.ByteString.Builder (Builder, fromLazyByteString, toLazyByteString)
 import Blaze.ByteString.Builder.Char.Utf8 (fromString)
 import Data.Maybe (isNothing)
-import Data.Monoid (Monoid, mempty, mconcat, mappend)
 import qualified GHC.Exts as Ext
 
+import Network.XmlRpc.Compat (Monoid, mempty, mconcat, mappend)
+
+--------------------------------------------------------------------------------
+
 -- |A 'Builder' with a recognizable empty value.
-newtype MBuilder = MBuilder { unMB :: Maybe Builder } deriving (Semigroup,Monoid)
+newtype MBuilder = MBuilder { unMB :: Maybe Builder }
+
+  deriving ( Monoid
+#if MIN_VERSION_base(4,9,0)
+           , Semigroup
+#endif
+           )
+
+--------------------------------------------------------------------------------
 
 -- |'Maybe' eliminator specialized for 'MBuilder'.
 maybe :: (t -> MBuilder) -> Maybe t -> MBuilder

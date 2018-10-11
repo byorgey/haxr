@@ -8,9 +8,10 @@ packages:
 ----------------------------------------
 optional-packages:
 
- ../HaXml2
+ ../HaXml2/HaXml.cabal
+ ../polyparse/polyparse.cabal
 
- ../spiros
+ ../spiros/
 
 --------------------------------------------------
 ---extra-packages:
