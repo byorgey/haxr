@@ -27,6 +27,8 @@
 #define OVERLAPPING_
 #endif
 
+------------------------------------------------------------
+
 module Network.XmlRpc.Internals (
 -- * Method calls and repsonses
 MethodCall(..), MethodResponse(..),
@@ -46,9 +48,10 @@ toXRMember, fromXRMember,
 Err, maybeToM, handleError, ioErrorToErr
 ) where
 
+----------------------------------------
+
 import           Control.Exception
-import           Control.Monad
-import           Control.Monad.Except
+import           Control.Monad.Except hiding (fail)
 import           Data.Char
 import           Data.List
 import           Data.Maybe
@@ -58,7 +61,7 @@ import           Data.Time.Calendar.WeekDate (toWeekDate)
 import           Data.Time.Format
 import           Data.Time.LocalTime
 import           Numeric (showFFloat)
-import           Prelude hiding (showString, catch)
+import           Prelude hiding (fail,showString, catch)
 import           System.IO.Unsafe (unsafePerformIO)
 import           System.Time (CalendarTime(..))
 
@@ -75,6 +78,11 @@ import qualified Network.XmlRpc.DTD_XMLRPC as XR
 import           Network.XmlRpc.Pretty
 import           Text.XML.HaXml.XmlContent
 
+----------------------------------------
+
+import Network.XmlRpc.Compat
+
+------------------------------------------------------------
 --
 -- General utilities
 --
@@ -93,15 +101,15 @@ replace ys zs xs@(x:xs')
     | otherwise = x : replace ys zs xs'
 
 -- | Convert a 'Maybe' value to a value in any monad
-maybeToM :: Monad m =>
-                String -- ^ Error message to fail with for 'Nothing'
+maybeToM :: MonadFail m
+             => String -- ^ Error message to fail with for 'Nothing'
              -> Maybe a -- ^ The 'Maybe' value.
              -> m a -- ^ The resulting value in the monad.
 maybeToM err Nothing = fail err
 maybeToM _ (Just x) = return x
 
 -- | Convert a 'Maybe' value to a value in any monad
-eitherToM :: Monad m
+eitherToM :: MonadFail m
           => String -- ^ Error message to fail with for 'Nothing'
           -> Either String a -- ^ The 'Maybe' value.
           -> m a -- ^ The resulting value in the monad.
@@ -112,6 +120,7 @@ eitherToM   _ (Right x) = return x
 xmlRpcDateFormat :: String
 xmlRpcDateFormat = "%Y%m%dT%H:%M:%S"
 
+------------------------------------------------------------
 --
 -- Error monad stuff
 --
@@ -129,12 +138,12 @@ ioErrorToErr :: IO a -> Err IO a
 ioErrorToErr x = (liftIO x >>= return) `catchError` \e -> throwError (show e)
 
 -- | Handle errors from the error monad.
-handleError :: Monad m => (String -> m a) -> Err m a -> m a
+handleError :: MonadFail m => (String -> m a) -> Err m a -> m a
 handleError h m = do
                   Right x <- runExceptT (catchError m (lift . h))
                   return x
 
-errorRead :: (Monad m, Read a) =>
+errorRead :: (MonadFail m, Read a) =>
              ReadS a -- ^ Parser
           -> String -- ^ Error message
           -> String -- ^ String to parse
@@ -143,6 +152,7 @@ errorRead r err s = case [x | (x,t) <- r s, ("","") <- lex t] of
                           [x] -> return x
                           _   -> fail (err ++ ": '" ++ s ++ "'")
 
+------------------------------------------------------------
 --
 -- Types for methods calls and responses
 --
@@ -206,7 +216,7 @@ instance Read Type where
                     ("array",r) -> [(TArray,r)]
 
 -- | Gets the value of a struct member
-structGetValue :: Monad m => String -> Value -> Err m Value
+structGetValue :: MonadFail m => String -> Value -> Err m Value
 structGetValue n (ValueStruct t) =
     maybeToM ("Unknown member '" ++ n ++ "'") (lookup n t)
 structGetValue _ _ = fail "Value is not a struct"
@@ -220,11 +230,12 @@ faultStruct code str = ValueStruct [("faultCode",ValueInt code),
 -- "The body of the response is a single XML structure, a
 -- <methodResponse>, which can contain a single <params> which contains a
 -- single <param> which contains a single <value>."
-onlyOneResult :: Monad m => [Value] -> Err m Value
+onlyOneResult :: MonadFail m => [Value] -> Err m Value
 onlyOneResult [] = fail "Method returned no result"
 onlyOneResult [x] = return x
 onlyOneResult _ = fail "Method returned more than one result"
 
+------------------------------------------------------------
 --
 -- Converting to and from XML-RPC types
 --
@@ -235,10 +246,10 @@ class XmlRpcType a where
     toValue :: a -> Value
     -- | Convert from a 'Value' to this type. May fail if
     --   if there is a type error.
-    fromValue :: Monad m => Value -> Err m a
+    fromValue :: MonadFail m => Value -> Err m a
     getType :: a -> Type
 
-typeError :: (XmlRpcType a, Monad m) => Value -> Err m a
+typeError :: (XmlRpcType a, MonadFail m) => Value -> Err m a
 typeError v = withType $ \t ->
        fail ("Wanted: "
              ++ show (getType t)
@@ -249,7 +260,7 @@ typeError v = withType $ \t ->
 withType :: (a -> Err m a) -> Err m a
 withType f = f undefined
 
-simpleFromValue :: (Monad m, XmlRpcType a) => (Value -> Maybe a)
+simpleFromValue :: (MonadFail m, XmlRpcType a) => (Value -> Maybe a)
                 -> Value -> Err m a
 simpleFromValue f v =
     maybe (typeError v) return (f v)
@@ -368,7 +379,7 @@ instance (XmlRpcType a, XmlRpcType b) => XmlRpcType (a,b) where
     getType _ = TArray
 
 -- | Get a field value from a (possibly heterogeneous) struct.
-getField :: (Monad m, XmlRpcType a) =>
+getField :: (MonadFail m, XmlRpcType a) =>
             String           -- ^ Field name
          -> [(String,Value)] -- ^ Struct
          -> Err m a
@@ -376,7 +387,7 @@ getField x xs = maybeToM ("struct member " ++ show x ++ " not found")
                 (lookup x xs) >>= fromValue
 
 -- | Get a field value from a (possibly heterogeneous) struct.
-getFieldMaybe :: (Monad m, XmlRpcType a) =>
+getFieldMaybe :: (MonadFail m, XmlRpcType a) =>
             String           -- ^ Field name
          -> [(String,Value)] -- ^ Struct
          -> Err m (Maybe a)
@@ -384,6 +395,7 @@ getFieldMaybe x xs = case lookup x xs of
                                       Nothing -> return Nothing
                                       Just v -> liftM Just (fromValue v)
 
+------------------------------------------------------------
 --
 -- Converting to XR types
 --
@@ -437,11 +449,12 @@ toXRParams vs = XR.Params (map (XR.Param . toXRValue) vs)
 toXRMember :: (String, Value) -> XR.Member
 toXRMember (n, v) = XR.Member (XR.Name n) (toXRValue v)
 
+------------------------------------------------------------
 --
 -- Converting from XR types
 --
 
-fromXRValue :: Monad m => XR.Value -> Err m Value
+fromXRValue :: MonadFail m => XR.Value -> Err m Value
 fromXRValue (XR.Value vs)
   =  case (filter notstr vs) of
        []     -> liftM  (ValueUnwrapped . concat) (mapM (readString . unstr) vs)
@@ -467,7 +480,7 @@ fromXRValue (XR.Value vs)
     liftM ValueArray (mapM fromXRValue xs)
 
 
-fromXRMember :: Monad m => XR.Member -> Err m (String,Value)
+fromXRMember :: MonadFail m => XR.Member -> Err m (String,Value)
 fromXRMember (XR.Member (XR.Name n) xv) = liftM (\v -> (n,v)) (fromXRValue xv)
 
 -- | From the XML-RPC specification:
@@ -476,14 +489,14 @@ fromXRMember (XR.Member (XR.Name n) xv) = liftM (\v -> (n,v)) (fromXRValue xv)
 -- minus at the beginning of a string of numeric characters. Leading
 -- zeros are collapsed. Whitespace is not permitted. Just numeric
 -- characters preceeded by a plus or minus.\"
-readInt :: Monad m => String -> Err m Int
+readInt :: MonadFail m => String -> Err m Int
 readInt s = errorRead reads "Error parsing integer" s
 
 
 -- | From the XML-RPC specification:
 --
 -- \"0 (false) or 1 (true)\"
-readBool :: Monad m => String -> Err m Bool
+readBool :: MonadFail m => String -> Err m Bool
 readBool s = errorRead readsBool "Error parsing boolean" s
     where readsBool "true" = [(True,"")]
           readsBool "false" = [(False,"")]
@@ -514,7 +527,7 @@ readString = return . replace "&amp;" "&" . replace "&lt;" "<"
 -- is implementation-dependent, is not specified.
 --
 -- FIXME: accepts more than decimal point notation
-readDouble :: Monad m => String -> Err m Double
+readDouble :: MonadFail m => String -> Err m Double
 readDouble s = errorRead reads "Error parsing double" s
 
 -- | From <http://groups.yahoo.com/group/xml-rpc/message/4733>:
@@ -523,7 +536,7 @@ readDouble s = errorRead reads "Error parsing double" s
 --   content of this element should not be assumed to comply with the
 --   variants of the ISO8601 standard. Only assume YYYYMMDDTHH:mm:SS\"
 -- FIXME: make more robust
-readDateTime :: Monad m => String -> Err m LocalTime
+readDateTime :: MonadFail m => String -> Err m LocalTime
 readDateTime dt =
     maybe
         (fail $ "Error parsing dateTime '" ++ dt ++ "'")
@@ -564,14 +577,14 @@ calendarTimeToLocalTime ct =
 readBase64 :: Monad m => String -> Err m BS.ByteString
 readBase64 = return . Base64.decode . BS.pack
 
-fromXRParams :: Monad m => XR.Params -> Err m [Value]
+fromXRParams :: MonadFail m => XR.Params -> Err m [Value]
 fromXRParams (XR.Params xps) = mapM (\(XR.Param v) -> fromXRValue v) xps
 
-fromXRMethodCall :: Monad m => XR.MethodCall -> Err m MethodCall
+fromXRMethodCall :: MonadFail m => XR.MethodCall -> Err m MethodCall
 fromXRMethodCall (XR.MethodCall (XR.MethodName name) params) =
     liftM (MethodCall name) (fromXRParams (fromMaybe (XR.Params []) params))
 
-fromXRMethodResponse :: Monad m => XR.MethodResponse -> Err m MethodResponse
+fromXRMethodResponse :: MonadFail m => XR.MethodResponse -> Err m MethodResponse
 fromXRMethodResponse (XR.MethodResponseParams xps) =
     liftM Return (fromXRParams xps >>= onlyOneResult)
 fromXRMethodResponse (XR.MethodResponseFault (XR.Fault v)) =
@@ -583,12 +596,13 @@ fromXRMethodResponse (XR.MethodResponseFault (XR.Fault v)) =
     str <- fromValue vstr
     return (Fault code str)
 
+------------------------------------------------------------
 --
 -- Parsing calls and reponses from XML
 --
 
 -- | Parses a method call from XML.
-parseCall :: (Show e, MonadError e m) => String -> Err m MethodCall
+parseCall :: (Show e, MonadError e m, MonadFail m) => String -> Err m MethodCall
 parseCall c =
     do
     mxc <- errorToErr (readXml c)
@@ -596,13 +610,14 @@ parseCall c =
     fromXRMethodCall xc
 
 -- | Parses a method response from XML.
-parseResponse :: (Show e, MonadError e m) => String -> Err m MethodResponse
+parseResponse :: (Show e, MonadError e m, MonadFail m) => String -> Err m MethodResponse
 parseResponse c =
     do
     mxr <- errorToErr (readXml c)
     xr <- eitherToM "Error parsing method response" mxr
     fromXRMethodResponse xr
 
+------------------------------------------------------------
 --
 -- Rendering calls and reponses to XML
 --
@@ -621,3 +636,5 @@ showXml' :: XmlContent a => Bool -> a -> BSL.ByteString
 showXml' dtd x = case toContents x of
                    [CElem _ _] -> (document . toXml dtd) x
                    _ -> BSL.pack ""
+
+------------------------------------------------------------

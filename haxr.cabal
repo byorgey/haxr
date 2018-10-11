@@ -26,7 +26,14 @@ Extra-Source-Files:
         examples/test_client.hs       examples/test_server.hs       examples/time-xmlrpc-com.hs
         examples/validate.hs          examples/Makefile
 Bug-reports: https://github.com/byorgey/haxr/issues
-Tested-with: GHC == 7.8.4, GHC == 7.10.3, GHC == 8.0.1
+
+Tested-with:
+           --[TODO ghc784 not on nixpkgs]-- GHC == 7.8.4
+            GHC == 7.10.3
+          , GHC == 8.0.2
+          , GHC == 8.2.2
+          , GHC == 8.4.3
+          , GHC == 8.6.1
 
 Source-repository head
   type:     git
@@ -82,8 +89,8 @@ Library
   else
     build-depends: network-uri < 2.6, network < 2.6
 
-  Default-extensions: TypeSynonymInstances, FlexibleInstances
-  Other-extensions: OverloadedStrings, GeneralizedNewtypeDeriving, TemplateHaskell
   Default-language: Haskell2010
+  Default-extensions: TypeSynonymInstances, FlexibleInstances
+  Other-extensions: CPP, OverloadedStrings, GeneralizedNewtypeDeriving, TemplateHaskell, ConstraintKinds
 
 ------------------------------------------------------------

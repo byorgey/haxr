@@ -20,7 +20,10 @@ import Blaze.ByteString.Builder.Char.Utf8 (fromString)
 import Data.Maybe (isNothing)
 import qualified GHC.Exts as Ext
 
-import Network.XmlRpc.Compat (Monoid, mempty, mconcat, mappend)
+----------------------------------------
+
+import qualified Network.XmlRpc.Compat as Compat
+import           Network.XmlRpc.Compat (Monoid, mempty, mconcat, mappend)
 
 --------------------------------------------------------------------------------
 
@@ -29,7 +32,7 @@ newtype MBuilder = MBuilder { unMB :: Maybe Builder }
 
   deriving ( Monoid
 #if MIN_VERSION_base(4,9,0)
-           , Semigroup
+           , Compat.Semigroup
 #endif
            )
 
