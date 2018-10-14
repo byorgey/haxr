@@ -7,7 +7,7 @@ packages:
 
          ./haxr.cabal
 
---------------------------------------------------
+----------------------------------------
 optional-packages:
 
                   ../HaXml/
@@ -44,25 +44,18 @@ haddock-hoogle:           True
 -- Flags: external packages ----------------------
 --------------------------------------------------
 
--- static: True
--- library-vanilla:    False
+profiling: True
 
 --------------------------------------------------
 
-shared:             True 
--- exectuable-dynamic: True
--- library-vanilla:    False
+static: True
+
+-- ^ 〈static〉 and 〈shared〉 are mutually-exclusive.
 
 --------------------------------------------------
 
-profiling:         True
-library-profiling: True
-
---------------------------------------------------
-
-relocatable:   True
-
--- deterministic: True
+---shared:             True 
+---exectuable-dynamic: True
 
 --------------------------------------------------
 -- Flags: cabal ----------------------------------
@@ -93,4 +86,42 @@ package *
 -- ^ global flags (i.e. for **all** external packages)
 
 --------------------------------------------------
+-- TODO ------------------------------------------
+--------------------------------------------------
+
+--------------------------------------------------
+
+-- extra-packages: 
+
+--------------------------------------------------
+
+-- static: True
+-- 
+-- Roll this package, and all its dependent libraries, into a combined `.a` archive, via GHC-8.4's `-staticlib`.
+-- 
+
+--------------------------------------------------
+   
+-- shared: True 
+-- exectuable-dynamic: True
+-- 
+-- Build shared library.
+-- Recompiles everything with -fPIC` (to generate position independent code).
+-- 
+
+--------------------------------------------------
+
+-- nix: True
+-- 
+-- most `cabal-install` flags are `cabal.project` fields too, but this isn't.
+-- use `$ cabal --enable-nix new-build`
+
+--------------------------------------------------
+-- Notes -----------------------------------------
+--------------------------------------------------
+
+-- Links:
+--
+-- * http://cabal.readthedocs.io/en/latest/nix-local-build.html
+
 --------------------------------------------------

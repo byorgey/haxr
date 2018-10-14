@@ -1,0 +1,67 @@
+-- See http://cabal.readthedocs.io/en/latest/nix-local-build.html
+----------------------------------------
+
+compiler:      ghcjs
+with-compiler: ghcjs
+
+----------------------------------------
+packages:
+
+ ./haxr.cabal
+
+----------------------------------------
+optional-packages:
+
+ -- ../spiros
+
+ -- ../HaXml/
+ -- ../polyparse/
+
+--------------------------------------------------
+
+source-repository-package
+    type:     git
+    location: https://github.com/sboosali/polyparse
+    subdir:   .
+    tag:      v1.30
+
+source-repository-package
+    type:     git
+    location: https://github.com/sboosali/HaXml
+    subdir:   .
+    tag:      v1.30
+
+--------------------------------------------------
+
+profiling: True
+
+--------------------------------------------------
+
+---shared:             True 
+---exectuable-dynamic: True
+
+--static: True
+
+--------------------------------------------------
+
+tests:         True
+benchmarks:    False
+documentation: False
+
+haddock-hyperlink-source: True
+haddock-hoogle:           True
+
+--------------------------------------------------
+
+extra-lib-dirs:     /home/sboo/.nix-profile/lib/
+extra-include-dirs: /home/sboo/.nix-profile/include/
+extra-prog-path:    /home/sboo/.nix-profile/bin/
+extra-prog-path:    /home/sboo/.nix-profile/libexec/
+
+package *
+  extra-lib-dirs:     /home/sboo/.nix-profile/lib/
+  extra-include-dirs: /home/sboo/.nix-profile/include/
+  extra-prog-path:    /home/sboo/.nix-profile/bin/
+  extra-prog-path:    /home/sboo/.nix-profile/libexec/
+
+--------------------------------------------------
