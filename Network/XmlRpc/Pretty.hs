@@ -1,4 +1,6 @@
-{-# LANGUAGE OverloadedStrings, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE CPP                        #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings          #-}
 
 -- | This is a fast non-pretty-printer for turning the internal representation
 --   of generic structured XML documents into Lazy ByteStrings.
@@ -6,26 +8,31 @@
 --   Text.Xml.HaXml.Types, so you can pretty-print as much or as little
 --   of the document as you wish.
 
-module Network.XmlRpc.Pretty (document, content, element, 
+module Network.XmlRpc.Pretty (document, content, element,
                               doctypedecl, prolog, cp) where
 
-import Prelude hiding (maybe, elem, concat, null, head)
-import qualified Prelude as P
-import Data.ByteString.Lazy.Char8 (ByteString(), elem, empty)
-import qualified Data.ByteString.Lazy.UTF8 as BU
-import Text.XML.HaXml.Types
-import Blaze.ByteString.Builder (Builder, fromLazyByteString, toLazyByteString)
-import Blaze.ByteString.Builder.Char.Utf8 (fromString)
-import Data.Maybe (isNothing)
-import Data.Monoid (Monoid, mempty, mconcat, mappend)
-import qualified GHC.Exts as Ext
+import           Blaze.ByteString.Builder           (Builder,
+                                                     fromLazyByteString,
+                                                     toLazyByteString)
+import           Blaze.ByteString.Builder.Char.Utf8 (fromString)
+import           Data.ByteString.Lazy.Char8         (ByteString, elem, empty)
+import qualified Data.ByteString.Lazy.UTF8          as BU
+import           Data.Maybe                         (isNothing)
+import           Data.Monoid                        (Monoid, mappend, mconcat,
+                                                     mempty)
+import           Data.Semigroup
+import qualified GHC.Exts                           as Ext
+import           Prelude                            hiding (concat, elem, head,
+                                                     maybe, null)
+import qualified Prelude                            as P
+import           Text.XML.HaXml.Types
 
 -- |A 'Builder' with a recognizable empty value.
-newtype MBuilder = MBuilder { unMB :: Maybe Builder } deriving Monoid
+newtype MBuilder = MBuilder { unMB :: Maybe Builder } deriving (Semigroup, Monoid)
 
 -- |'Maybe' eliminator specialized for 'MBuilder'.
 maybe :: (t -> MBuilder) -> Maybe t -> MBuilder
-maybe _ Nothing = mempty
+maybe _ Nothing  = mempty
 maybe f (Just x) = f x
 
 -- |Nullity predicate for 'MBuilder'.
@@ -44,17 +51,21 @@ fromLBS = MBuilder . Just . fromLazyByteString
 -- syntax.
 instance Ext.IsString MBuilder where
   fromString "" = mempty
-  fromString s = MBuilder . Just . fromString $ s
+  fromString s  = MBuilder . Just . fromString $ s
 
--- A simple implementation of the pretty-printing combinator interface,
--- but for plain ByteStrings:
+-- Only define <> as mappend if not already provided in Prelude
+#if !MIN_VERSION_base(4,11,0)
 infixr 6 <>
-infixr 6 <+>
-infixr 5 $$
 
 -- |Beside.
 (<>) :: MBuilder -> MBuilder -> MBuilder
 (<>) = mappend
+#endif
+
+-- A simple implementation of the pretty-printing combinator interface,
+-- but for plain ByteStrings:
+infixr 6 <+>
+infixr 5 $$
 
 -- |Concatenate two 'MBuilder's with a single space in between
 -- them. If either of the component 'MBuilder's is empty, then the
@@ -69,7 +80,7 @@ infixr 5 $$
 -- them. If either of the component 'MBuilder's is empty, then the
 -- other is returned without any additional newline.
 ($$) :: MBuilder -> MBuilder -> MBuilder
-($$) b1 b2 
+($$) b1 b2
   | null b2 = b1
   | null b1 = b2
   | otherwise =  b1 <> "\n" <> b2
@@ -82,7 +93,7 @@ intercalate sep = aux . filter (not . null)
         aux (x:xs) = x <> mconcat (map (sep <>) xs)
 
 -- |List version of '<+>'.
-hsep :: [MBuilder] -> MBuilder             
+hsep :: [MBuilder] -> MBuilder
 hsep = intercalate " "
 
 -- |List version of '$$'.
@@ -96,7 +107,7 @@ vcatMap :: (a -> MBuilder) -> [a] -> MBuilder
 vcatMap = (vcat .) . map
 
 -- |``Paragraph fill'' version of 'sep'.
-fsep :: [MBuilder] -> MBuilder     
+fsep :: [MBuilder] -> MBuilder
 fsep = hsep
 
 -- |Bracket an 'MBuilder' with parentheses.
@@ -109,7 +120,7 @@ text = MBuilder . Just . fromString
 name :: QName -> MBuilder
 name = MBuilder . Just . fromString . unQ
   where unQ (QN (Namespace prefix uri) n) = prefix++":"++n
-        unQ (N n) = n
+        unQ (N n)                         = n
 
 ----
 -- Now for the XML pretty-printing interface.
@@ -140,7 +151,7 @@ attribute  :: Attribute  -> MBuilder
 -- |Run an 'MBuilder' to generate a 'ByteString'.
 runMBuilder :: MBuilder -> ByteString
 runMBuilder = aux . unMB
-  where aux Nothing = empty
+  where aux Nothing  = empty
         aux (Just b) = toLazyByteString b
 
 document    = runMBuilder . documentB
@@ -161,8 +172,8 @@ xmldecl (XMLDecl v e sd)    = "<?xml version='" <> text v <> "'" <+>
                               maybe encodingdecl e <+>
                               maybe sddecl sd <+> "?>"
 
-misc (Comment s)            = "<!--" <+> text s <+> "-->"
-misc (PI (n,s))             = "<?" <> text n <+> text s <+> "?>"
+misc (Comment s) = "<!--" <+> text s <+> "-->"
+misc (PI (n,s))  = "<?" <> text n <+> text s <+> "?>"
 
 sddecl sd   | sd            = "standalone='yes'"
             | otherwise     = "standalone='no'"
@@ -171,14 +182,14 @@ doctypedeclB (DTD n eid ds)  = if P.null ds then hd <> ">"
                                else hd <+> " [" $$ vcatMap markupdecl ds $$ "]>"
   where hd = "<!DOCTYPE" <+> name n <+> maybe externalid eid
 
-markupdecl (Element e)      = elementdecl e
-markupdecl (AttList a)      = attlistdecl a
-markupdecl (Entity e)       = entitydecl e
-markupdecl (Notation n)     = notationdecl n
-markupdecl (MarkupMisc m)   = misc m
+markupdecl (Element e)    = elementdecl e
+markupdecl (AttList a)    = attlistdecl a
+markupdecl (Entity e)     = entitydecl e
+markupdecl (Notation n)   = notationdecl n
+markupdecl (MarkupMisc m) = misc m
 
 elementB (Elem n as []) = "<" <> (name n <+> fsep (map attribute as)) <> "/>"
-elementB (Elem n as cs) 
+elementB (Elem n as cs)
   | isText (P.head cs)  = "<" <> (name n <+> fsep (map attribute as)) <> ">" <>
                           hcatMap contentB cs <> "</" <> name n <> ">"
   | otherwise           = "<" <> (name n <+> fsep (map attribute as)) <> ">" <>
@@ -222,25 +233,25 @@ mixed  PCDATA         = "(#PCDATA)"
 mixed (PCDATAplus ns) = "(#PCDATA |" <+> intercalate "|" (map name ns) <> ")*"
 
 attlistdecl :: AttListDecl -> MBuilder
-attlistdecl (AttListDecl n ds) = "<!ATTLIST" <+> name n <+> 
+attlistdecl (AttListDecl n ds) = "<!ATTLIST" <+> name n <+>
                                  fsep (map attdef ds) <> ">"
 
 attdef :: AttDef -> MBuilder
 attdef (AttDef n t d)          = name n <+> atttype t <+> defaultdecl d
 
 atttype :: AttType -> MBuilder
-atttype  StringType            = "CDATA"
-atttype (TokenizedType t)      = tokenizedtype t
-atttype (EnumeratedType t)     = enumeratedtype t
+atttype  StringType        = "CDATA"
+atttype (TokenizedType t)  = tokenizedtype t
+atttype (EnumeratedType t) = enumeratedtype t
 
 tokenizedtype :: TokenizedType -> MBuilder
-tokenizedtype ID               = "ID"
-tokenizedtype IDREF            = "IDREF"
-tokenizedtype IDREFS           = "IDREFS"
-tokenizedtype ENTITY           = "ENTITY"
-tokenizedtype ENTITIES         = "ENTITIES"
-tokenizedtype NMTOKEN          = "NMTOKEN"
-tokenizedtype NMTOKENS         = "NMTOKENS"
+tokenizedtype ID       = "ID"
+tokenizedtype IDREF    = "IDREF"
+tokenizedtype IDREFS   = "IDREFS"
+tokenizedtype ENTITY   = "ENTITY"
+tokenizedtype ENTITIES = "ENTITIES"
+tokenizedtype NMTOKEN  = "NMTOKEN"
+tokenizedtype NMTOKENS = "NMTOKENS"
 
 enumeratedtype :: EnumeratedType -> MBuilder
 enumeratedtype (NotationType n) = notationtype n
@@ -254,13 +265,13 @@ enumeration :: [[Char]] -> MBuilder
 enumeration ns                 = parens (intercalate "|" (map nmtoken ns))
 
 defaultdecl :: DefaultDecl -> MBuilder
-defaultdecl  REQUIRED          = "#REQUIRED"
-defaultdecl  IMPLIED           = "#IMPLIED"
-defaultdecl (DefaultTo a f)    = maybe (const "#FIXED") f <+> attvalue a
+defaultdecl  REQUIRED       = "#REQUIRED"
+defaultdecl  IMPLIED        = "#IMPLIED"
+defaultdecl (DefaultTo a f) = maybe (const "#FIXED") f <+> attvalue a
 
 reference :: Reference -> MBuilder
-reference (RefEntity er)       = entityref er
-reference (RefChar cr)         = charref cr
+reference (RefEntity er) = entityref er
+reference (RefChar cr)   = charref cr
 
 entityref :: [Char] -> MBuilder
 entityref n                    = "&" <> text n <> ";"
@@ -269,8 +280,8 @@ charref :: (Show a) => a -> MBuilder
 charref c                      = "&#" <> text (show c) <> ";"
 
 entitydecl :: EntityDecl -> MBuilder
-entitydecl (EntityGEDecl d)    = gedecl d
-entitydecl (EntityPEDecl d)    = pedecl d
+entitydecl (EntityGEDecl d) = gedecl d
+entitydecl (EntityPEDecl d) = pedecl d
 
 gedecl :: GEDecl -> MBuilder
 gedecl (GEDecl n ed)           = "<!ENTITY" <+> text n <+> entitydef ed <> ">"
@@ -283,12 +294,12 @@ entitydef (DefEntityValue ew)  = entityvalue ew
 entitydef (DefExternalID i nd) = externalid i <+> maybe ndatadecl nd
 
 pedef :: PEDef -> MBuilder
-pedef (PEDefEntityValue ew)    = entityvalue ew
-pedef (PEDefExternalID eid)    = externalid eid
+pedef (PEDefEntityValue ew) = entityvalue ew
+pedef (PEDefExternalID eid) = externalid eid
 
 externalid :: ExternalID -> MBuilder
-externalid (SYSTEM sl)         = "SYSTEM" <+> systemliteral sl
-externalid (PUBLIC i sl)       = "PUBLIC" <+> pubidliteral i <+> systemliteral sl
+externalid (SYSTEM sl)   = "SYSTEM" <+> systemliteral sl
+externalid (PUBLIC i sl) = "PUBLIC" <+> pubidliteral i <+> systemliteral sl
 
 ndatadecl :: NDataDecl -> MBuilder
 ndatadecl (NDATA n)            = "NDATA" <+> text n
@@ -316,8 +327,8 @@ entityvalue (EntityValue evs)
   | otherwise                  = "\"" <> hcatMap ev evs <> "\""
 
 ev :: EV -> MBuilder
-ev (EVString s)                = text s
-ev (EVRef r)                   = reference r
+ev (EVString s) = text s
+ev (EVRef r)    = reference r
 
 pubidliteral :: PubidLiteral -> MBuilder
 pubidliteral (PubidLiteral s)

@@ -49,6 +49,8 @@ Err, maybeToM, handleError, ioErrorToErr
 import           Control.Exception
 import           Control.Monad
 import           Control.Monad.Except
+import qualified Control.Monad.Fail as Fail
+import           Control.Monad.Fail (MonadFail)
 import           Data.Char
 import           Data.List
 import           Data.Maybe
@@ -93,11 +95,11 @@ replace ys zs xs@(x:xs')
     | otherwise = x : replace ys zs xs'
 
 -- | Convert a 'Maybe' value to a value in any monad
-maybeToM :: Monad m =>
+maybeToM :: MonadFail m =>
                 String -- ^ Error message to fail with for 'Nothing'
              -> Maybe a -- ^ The 'Maybe' value.
              -> m a -- ^ The resulting value in the monad.
-maybeToM err Nothing = fail err
+maybeToM err Nothing = Fail.fail err
 maybeToM _ (Just x) = return x
 
 -- | Convert a 'Maybe' value to a value in any monad
@@ -129,7 +131,7 @@ ioErrorToErr :: IO a -> Err IO a
 ioErrorToErr x = (liftIO x >>= return) `catchError` \e -> throwError (show e)
 
 -- | Handle errors from the error monad.
-handleError :: Monad m => (String -> m a) -> Err m a -> m a
+handleError :: MonadFail m => (String -> m a) -> Err m a -> m a
 handleError h m = do
                   Right x <- runExceptT (catchError m (lift . h))
                   return x
@@ -206,7 +208,7 @@ instance Read Type where
                     ("array",r) -> [(TArray,r)]
 
 -- | Gets the value of a struct member
-structGetValue :: Monad m => String -> Value -> Err m Value
+structGetValue :: MonadFail m => String -> Value -> Err m Value
 structGetValue n (ValueStruct t) =
     maybeToM ("Unknown member '" ++ n ++ "'") (lookup n t)
 structGetValue _ _ = fail "Value is not a struct"
@@ -368,7 +370,7 @@ instance (XmlRpcType a, XmlRpcType b) => XmlRpcType (a,b) where
     getType _ = TArray
 
 -- | Get a field value from a (possibly heterogeneous) struct.
-getField :: (Monad m, XmlRpcType a) =>
+getField :: (MonadFail m, XmlRpcType a) =>
             String           -- ^ Field name
          -> [(String,Value)] -- ^ Struct
          -> Err m a
@@ -571,7 +573,7 @@ fromXRMethodCall :: Monad m => XR.MethodCall -> Err m MethodCall
 fromXRMethodCall (XR.MethodCall (XR.MethodName name) params) =
     liftM (MethodCall name) (fromXRParams (fromMaybe (XR.Params []) params))
 
-fromXRMethodResponse :: Monad m => XR.MethodResponse -> Err m MethodResponse
+fromXRMethodResponse :: MonadFail m => XR.MethodResponse -> Err m MethodResponse
 fromXRMethodResponse (XR.MethodResponseParams xps) =
     liftM Return (fromXRParams xps >>= onlyOneResult)
 fromXRMethodResponse (XR.MethodResponseFault (XR.Fault v)) =
@@ -596,7 +598,7 @@ parseCall c =
     fromXRMethodCall xc
 
 -- | Parses a method response from XML.
-parseResponse :: (Show e, MonadError e m) => String -> Err m MethodResponse
+parseResponse :: (Show e, MonadError e m, MonadFail m) => String -> Err m MethodResponse
 parseResponse c =
     do
     mxr <- errorToErr (readXml c)
