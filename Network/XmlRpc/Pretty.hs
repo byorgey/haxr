@@ -20,7 +20,7 @@ import qualified Data.ByteString.Lazy.UTF8          as BU
 import           Data.Maybe                         (isNothing)
 import           Data.Monoid                        (Monoid, mappend, mconcat,
                                                      mempty)
-import           Data.Semigroup
+import           Data.Semigroup                     (Semigroup)
 import qualified GHC.Exts                           as Ext
 import           Prelude                            hiding (concat, elem, head,
                                                      maybe, null)
