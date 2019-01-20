@@ -19,3 +19,4 @@ cabal.sandbox.config
 examples/wp-test
 
 .stack-work/
+/cabal.project.local
