@@ -37,7 +37,7 @@ Library
                  base-compat >= 0.8 && < 0.11,
                  mtl,
                  mtl-compat,
-                 network < 2.9,
+                 network < 3.1,
                  http-streams,
                  HsOpenSSL,
                  io-streams,
