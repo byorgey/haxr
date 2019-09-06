@@ -237,7 +237,7 @@ class XmlRpcType a where
     toValue :: a -> Value
     -- | Convert from a 'Value' to this type. May fail if
     --   if there is a type error.
-    fromValue :: Monad m => Value -> Err m a
+    fromValue :: MonadFail m => Value -> Err m a
     getType :: a -> Type
 
 typeError :: (XmlRpcType a, Monad m) => Value -> Err m a
@@ -378,7 +378,7 @@ getField x xs = maybeToM ("struct member " ++ show x ++ " not found")
                 (lookup x xs) >>= fromValue
 
 -- | Get a field value from a (possibly heterogeneous) struct.
-getFieldMaybe :: (Monad m, XmlRpcType a) =>
+getFieldMaybe :: (MonadFail m, XmlRpcType a) =>
             String           -- ^ Field name
          -> [(String,Value)] -- ^ Struct
          -> Err m (Maybe a)
