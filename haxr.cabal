@@ -33,11 +33,11 @@ flag network-uri
    default: True
 
 Library
-  Build-depends: base >= 4.9 && < 4.13,
+  Build-depends: base >= 4.9 && < 4.14,
                  base-compat >= 0.8 && < 0.11,
                  mtl,
                  mtl-compat,
-                 network < 3.1,
+                 network < 3.2,
                  http-streams,
                  HsOpenSSL,
                  io-streams,
