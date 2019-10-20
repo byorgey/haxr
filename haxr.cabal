@@ -22,7 +22,7 @@ Extra-Source-Files:
         examples/test_client.hs       examples/test_server.hs       examples/time-xmlrpc-com.hs
         examples/validate.hs          examples/Makefile
 Bug-reports: https://github.com/byorgey/haxr/issues
-Tested-with: GHC == 8.0.2, GHC == 8.2.2, GHC == 8.4.4, GHC == 8.6.3, GHC == 8.8.1
+Tested-with: GHC ==8.0.2 || ==8.2.2 || ==8.4.4 || ==8.6.3 || ==8.8.1
 
 Source-repository head
   type:     git
