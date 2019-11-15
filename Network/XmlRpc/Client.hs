@@ -39,32 +39,35 @@ module Network.XmlRpc.Client
 
 import           Network.XmlRpc.Internals
 
+import           Control.Monad.Fail         (MonadFail)
+import qualified Control.Monad.Fail         as Fail
 import           Data.Functor               ((<$>))
-import           Data.Maybe
 import           Data.Int
+import           Data.Maybe
 import           Network.URI
 import           Text.Read.Compat           (readMaybe)
 
 import           Network.Http.Client        (Method (..), Request,
                                              baselineContextSSL, buildRequest,
                                              closeConnection, getStatusCode,
-                                             getStatusMessage, http, openConnection,
-                                             inputStreamBody, openConnectionSSL,
-                                             receiveResponse, sendRequest,
-                                             setAuthorizationBasic,
-                                             setContentType, setContentLength, setHeader)
+                                             getStatusMessage, http,
+                                             inputStreamBody, openConnection,
+                                             openConnectionSSL, receiveResponse,
+                                             sendRequest, setAuthorizationBasic,
+                                             setContentLength, setContentType,
+                                             setHeader)
 import           OpenSSL
 import qualified System.IO.Streams          as Streams
 
 import qualified Data.ByteString.Char8      as BS
 import qualified Data.ByteString.Lazy.Char8 as BSL (ByteString, fromChunks,
-                                                    unpack, length)
+                                                    length, unpack)
 import qualified Data.ByteString.Lazy.UTF8  as U
 
 -- | Gets the return value from a method response.
 --   Throws an exception if the response was a fault.
-handleResponse :: Monad m => MethodResponse -> m Value
-handleResponse (Return v) = return v
+handleResponse :: MonadFail m => MethodResponse -> m Value
+handleResponse (Return v)       = return v
 handleResponse (Fault code str) = fail ("Error " ++ show code ++ ": " ++ str)
 
 type HeadersAList = [(BS.ByteString, BS.ByteString)]
@@ -223,8 +226,8 @@ request uri auth usrHeaders len = buildRequest $ do
 -- Utility functions
 --
 
-maybeFail :: Monad m => String -> Maybe a -> m a
-maybeFail msg = maybe (fail msg) return
+maybeFail :: MonadFail m => String -> Maybe a -> m a
+maybeFail msg = maybe (Fail.fail msg) return
 
 dropAtEnd :: String -> String
 dropAtEnd l = take (length l - 1) l
