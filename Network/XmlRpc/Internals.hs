@@ -170,6 +170,7 @@ data Value =
     | ValueBase64 BS.ByteString -- ^ base 64.  NOTE that you should provide the raw data; the haxr library takes care of doing the base-64 encoding.
     | ValueStruct [(String,Value)] -- ^ struct
     | ValueArray [Value]  -- ^ array
+    | ValueNil -- ^ nil
       deriving (Eq, Show) -- for debugging
 
 -- | An XML-RPC value. Use for error messages and introspection.
@@ -183,6 +184,7 @@ data Type =
           | TStruct
           | TArray
           | TUnknown
+          | TNil
       deriving (Eq)
 
 instance Show Type where
@@ -195,6 +197,7 @@ instance Show Type where
     show TStruct = "struct"
     show TArray = "array"
     show TUnknown = "unknown"
+    show TNil = "nil"
 
 instance Read Type where
     readsPrec _ s = case break isSpace (dropWhile isSpace s) of
@@ -206,6 +209,7 @@ instance Read Type where
                     ("base64",r) -> [(TBase64,r)]
                     ("struct",r) -> [(TStruct,r)]
                     ("array",r) -> [(TArray,r)]
+                    ("nil",r) -> [(TNil,r)]
 
 -- | Gets the value of a struct member
 structGetValue :: MonadFail m => String -> Value -> Err m Value
@@ -319,6 +323,13 @@ instance XmlRpcType CalendarTime where
     fromValue = liftM localTimeToCalendarTime . fromValue
     getType _ = TDateTime
 
+instance XmlRpcType () where
+    toValue = const ValueNil
+    fromValue = simpleFromValue f
+        where f ValueNil = Just ()
+              f _ = Nothing
+    getType _ = TNil
+
 -- FIXME: array elements may have different types
 instance OVERLAPPABLE_ XmlRpcType a => XmlRpcType [a] where
     toValue = ValueArray . map toValue
@@ -402,6 +413,7 @@ toXRValue (ValueBase64 s) = XR.Value [XR.Value_Base64 (XR.Base64 (showBase64 s))
 toXRValue (ValueStruct xs) = XR.Value [XR.Value_Struct (XR.Struct (map toXRMember xs))]
 toXRValue (ValueArray xs) =
     XR.Value [XR.Value_Array (XR.Array (XR.Data (map toXRValue xs)))]
+toXRValue ValueNil = XR.Value [XR.Value_Nil (XR.Nil ())]
 
 showInt :: Int -> String
 showInt = show
@@ -467,6 +479,7 @@ fromXRValue (XR.Value vs)
     liftM ValueStruct (mapM fromXRMember ms)
   f (XR.Value_Array (XR.Array (XR.Data xs))) =
     liftM ValueArray (mapM fromXRValue xs)
+  f (XR.Value_Nil (XR.Nil x)) = return ValueNil
 
 
 fromXRMember :: MonadFail m => XR.Member -> Err m (String,Value)

@@ -21,6 +21,7 @@ newtype Name = Name String              deriving (Eq,Show)
 data Member = Member Name Value
             deriving (Eq,Show)
 newtype Struct = Struct [Member]                deriving (Eq,Show)
+newtype Nil = Nil ()                    deriving (Eq,Show)
 newtype Value = Value [Value_]          deriving (Eq,Show)
 data Value_ = Value_Str String
             | Value_I4 I4
@@ -33,6 +34,7 @@ data Value_ = Value_Str String
             | Value_Base64 Base64
             | Value_Struct Struct
             | Value_Array Array
+            | Value_Nil Nil
             deriving (Eq,Show)
 newtype Param = Param Value             deriving (Eq,Show)
 newtype Params = Params [Param]                 deriving (Eq,Show)
@@ -117,6 +119,16 @@ instance XmlContent DateTime_iso8601 where
         ; interior e $ return (DateTime_iso8601)
                        `apply` (text `onFail` return "")
         } `adjustErr` ("in <dateTime.iso8601>, "++)
+
+instance HTypeable Nil where
+    toHType x = Defined "nil" [] []
+instance XmlContent Nil where
+    toContents (Nil a) =
+        [CElem (Elem (N "nil") [] []) ()]
+    parseContents = do
+        { e@(Elem _ [] _) <- element ["nil"]
+        ; interior e $ return (Nil) `apply` (return ())
+        } `adjustErr` ("in <nil/>, "++)
 
 instance HTypeable Base64 where
     toHType x = Defined "base64" [] []
@@ -203,6 +215,7 @@ instance XmlContent Value_ where
     toContents (Value_Base64 a) = toContents a
     toContents (Value_Struct a) = toContents a
     toContents (Value_Array a) = toContents a
+    toContents (Value_Nil a) = toContents a
     parseContents = oneOf
         [ return (Value_Str) `apply` text
         , return (Value_I4) `apply` parseContents
@@ -215,6 +228,7 @@ instance XmlContent Value_ where
         , return (Value_Base64) `apply` parseContents
         , return (Value_Struct) `apply` parseContents
         , return (Value_Array) `apply` parseContents
+        , return (Value_Nil) `apply` parseContents
         ] `adjustErr` ("in <value>, "++)
 
 instance HTypeable Param where
