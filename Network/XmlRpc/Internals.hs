@@ -48,9 +48,11 @@ Err, maybeToM, handleError, ioErrorToErr
 
 import           Control.Exception
 import           Control.Monad
-import           Control.Monad.Except
+import           Control.Monad.Except (ExceptT, MonadError(..), runExceptT)
 import qualified Control.Monad.Fail as Fail
 import           Control.Monad.Fail (MonadFail)
+import           Control.Monad.IO.Class
+import           Control.Monad.Trans
 import           Data.Char
 import           Data.List
 import           Data.Maybe

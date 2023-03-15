@@ -32,7 +32,7 @@ import           Network.XmlRpc.Internals
 
 import qualified Codec.Binary.UTF8.String   as U
 import           Control.Exception
-import           Control.Monad.Except
+import           Control.Monad.Trans
 import           Data.ByteString.Lazy.Char8 (ByteString)
 import qualified Data.ByteString.Lazy.Char8 as B
 import           System.IO
