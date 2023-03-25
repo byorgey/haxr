@@ -3,6 +3,8 @@
   - Updates for `mtl-2.3`.
   - Add an upper bound on `mtl` to prevent future breakage.
 
+  - r1 (25 March 2023): support GHC 9.6, `base-compat-0.13`
+
 * 3000.11.4.1 (9 July 2020)
 
   - Support GHC-8.10
