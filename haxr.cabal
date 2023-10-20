@@ -33,7 +33,7 @@ flag network-uri
    default: True
 
 Library
-  Build-depends: base >= 4.9 && < 4.19,
+  Build-depends: base >= 4.9 && < 4.20,
                  base-compat >= 0.8 && < 0.14,
                  mtl < 2.4,
                  mtl-compat,
