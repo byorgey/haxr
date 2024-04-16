@@ -5,6 +5,7 @@
 
   - r1 (25 March 2023): support GHC 9.6, `base-compat-0.13`
   - r2 (23 Oct 2023): support GHC 9.8
+  - r3 (16 Apr 2024): allow `network-3.2`
 
 * 3000.11.4.1 (9 July 2020)
 
