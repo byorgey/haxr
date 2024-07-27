@@ -19,7 +19,7 @@ on:
 jobs:
   linux:
     name: Haskell-CI - Linux - ${{ matrix.compiler }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     timeout-minutes:
       60
     container:
@@ -28,19 +28,24 @@ jobs:
     strategy:
       matrix:
         include:
-          - compiler: ghc-9.8.1
+          - compiler: ghc-9.10.1
             compilerKind: ghc
-            compilerVersion: 9.8.1
+            compilerVersion: 9.10.1
             setup-method: ghcup
             allow-failure: false
-          - compiler: ghc-9.6.3
+          - compiler: ghc-9.8.2
             compilerKind: ghc
-            compilerVersion: 9.6.3
+            compilerVersion: 9.8.2
             setup-method: ghcup
             allow-failure: false
-          - compiler: ghc-9.4.7
+          - compiler: ghc-9.6.6
             compilerKind: ghc
-            compilerVersion: 9.4.7
+            compilerVersion: 9.6.6
+            setup-method: ghcup
+            allow-failure: false
+          - compiler: ghc-9.4.8
+            compilerKind: ghc
+            compilerVersion: 9.4.8
             setup-method: ghcup
             allow-failure: false
           - compiler: ghc-9.2.8
@@ -175,7 +180,7 @@ jobs:
           chmod a+x $HOME/.cabal/bin/cabal-plan
           cabal-plan --version
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: source
       - name: initial cabal.project for sdist
@@ -211,7 +216,7 @@ jobs:
           $CABAL v2-build $ARG_COMPILER $ARG_TESTS $ARG_BENCH --dry-run all
           cabal-plan
       - name: restore cache
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@v4
         with:
           key: ${{ runner.os }}-${{ matrix.compiler }}-${{ github.sha }}
           path: ~/.cabal/store
@@ -238,7 +243,7 @@ jobs:
           rm -f cabal.project.local
           $CABAL v2-build $ARG_COMPILER --disable-tests --disable-benchmarks all
       - name: save cache
-        uses: actions/cache/save@v3
+        uses: actions/cache/save@v4
         if: always()
         with:
           key: ${{ runner.os }}-${{ matrix.compiler }}-${{ github.sha }}
