@@ -43,6 +43,7 @@ import           Control.Monad.Fail         (MonadFail)
 import qualified Control.Monad.Fail         as Fail
 import           Data.Functor               ((<$>))
 import           Data.Int
+import           Data.List                  (uncons)
 import           Data.Maybe
 import           Network.URI
 import           Text.Read.Compat           (readMaybe)
@@ -220,7 +221,7 @@ request uri auth usrHeaders len = buildRequest $ do
     where
       parseUserInfo info = let (u,pw) = break (==':') $ uriUserInfo info
                            in ( if null u then Nothing else Just u
-                              , if null pw then Nothing else Just $ dropAtEnd $ tail pw )
+                              , (dropAtEnd . snd) <$> uncons pw )
 
 --
 -- Utility functions

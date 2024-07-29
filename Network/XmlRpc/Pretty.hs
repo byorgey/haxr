@@ -189,11 +189,11 @@ markupdecl (Notation n)   = notationdecl n
 markupdecl (MarkupMisc m) = misc m
 
 elementB (Elem n as []) = "<" <> (name n <+> fsep (map attribute as)) <> "/>"
-elementB (Elem n as cs)
-  | isText (P.head cs)  = "<" <> (name n <+> fsep (map attribute as)) <> ">" <>
-                          hcatMap contentB cs <> "</" <> name n <> ">"
-  | otherwise           = "<" <> (name n <+> fsep (map attribute as)) <> ">" <>
-                          hcatMap contentB cs <> "</" <> name n <> ">"
+elementB (Elem n as cs@(c:_))
+  | isText c  = "<" <> (name n <+> fsep (map attribute as)) <> ">" <>
+                hcatMap contentB cs <> "</" <> name n <> ">"
+  | otherwise = "<" <> (name n <+> fsep (map attribute as)) <> ">" <>
+                hcatMap contentB cs <> "</" <> name n <> ">"
 
 isText :: Content t -> Bool
 isText (CString _ _ _) = True
