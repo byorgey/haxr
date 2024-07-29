@@ -1,3 +1,7 @@
+* 3000.11.5.1 (29 July 2024)
+
+  - Support GHC 9.10 and fix warnings
+
 * 3000.11.5 (17 March 2023)
 
   - Updates for `mtl-2.3`.
