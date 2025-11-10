@@ -54,7 +54,8 @@ import           Network.Http.Client        (Method (..), Request,
                                              getStatusMessage, http,
                                              inputStreamBody, openConnection,
                                              openConnectionSSL, receiveResponse,
-                                             sendRequest, setAuthorizationBasic,
+                                             sendRequest, setAccept,
+                                             setAuthorizationBasic,
                                              setContentLength, setContentType,
                                              setHeader)
 import           OpenSSL
@@ -209,6 +210,7 @@ request uri auth usrHeaders len = buildRequest $ do
     http POST (BS.pack $ uriPath uri)
     setContentType "text/xml"
     setContentLength len
+    setAccept "application/xml"
 
     case parseUserInfo auth of
       (Just user, Just pass) -> setAuthorizationBasic (BS.pack user) (BS.pack pass)
