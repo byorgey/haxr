@@ -34,7 +34,7 @@ flag network-uri
 
 Library
   Build-depends: base >= 4.9 && < 4.22,
-                 base-compat >= 0.8 && < 0.15,
+                 base-compat >= 0.8 && < 0.16,
                  mtl < 2.4,
                  mtl-compat,
                  network < 3.3,
