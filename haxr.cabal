@@ -33,16 +33,16 @@ flag network-uri
    default: True
 
 Library
-  Build-depends: base >= 4.9 && < 4.22,
-                 base-compat >= 0.8 && < 0.16,
-                 mtl < 2.4,
+  Build-depends: base >= 4.9 && < 5,
+                 base-compat >= 0.8 && < 1.0,
+                 mtl < 3.0,
                  mtl-compat,
-                 network < 3.3,
+                 network < 4.0,
                  http-streams,
                  HsOpenSSL,
                  io-streams,
                  http-types,
-                 HaXml >= 1.22 && < 1.26,
+                 HaXml >= 1.22,
                  http-streams,
                  bytestring,
                  base64-bytestring,
@@ -53,7 +53,7 @@ Library
                  array,
                  utf8-string,
                  template-haskell,
-                 blaze-builder >= 0.2 && < 0.5
+                 blaze-builder >= 0.2
 
   if flag(network-uri)
     build-depends: network-uri >= 2.6, network >= 2.6
