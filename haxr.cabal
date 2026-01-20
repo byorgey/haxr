@@ -34,10 +34,10 @@ flag network-uri
 
 Library
   Build-depends: base >= 4.9 && < 5,
-                 base-compat >= 0.8 && < 1.0,
-                 mtl < 3.0,
+                 base-compat >= 0.8 && < 1,
+                 mtl < 3,
                  mtl-compat,
-                 network < 4.0,
+                 network < 4,
                  http-streams,
                  HsOpenSSL,
                  io-streams,
