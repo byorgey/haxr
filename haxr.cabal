@@ -26,7 +26,7 @@ Tested-with: GHC ==8.4.4 || ==8.6.5 || ==8.8.4 || ==8.10.7 || ==9.0.2 || ==9.2.8
 
 Source-repository head
   type:     git
-  location: git://github.com/byorgey/haxr.git
+  location: https://github.com/byorgey/haxr
 
 flag network-uri
    description: Get Network.URI from the network-uri package
