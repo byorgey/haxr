@@ -1,3 +1,8 @@
+* 3000.11.6.1 (4 April 2026)
+
+  - Update and/or remove some dependency upper bounds (`base`, `base-compat`, `mtl`, `network`, `HaXml`, `blaze-builder`)
+  - Support GHC 9.14
+
 * 3000.11.6 (10 November 2025)
 
   - Add 'Accept: application/xml' header to requests.  Thanks to Jens
